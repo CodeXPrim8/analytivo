@@ -2,8 +2,20 @@ import { format, subDays, startOfDay } from 'date-fns'
 import { prisma } from '@/lib/db'
 import { shortUrlFor } from '@/lib/links'
 
-export async function getLinkStats(userId: string, linkIds?: string[]) {
+export async function getLinkStats(
+  userId: string,
+  linkIds?: string[],
+  range?: { from: Date; to?: Date },
+) {
   const where = {
+    ...(range
+      ? {
+          createdAt: {
+            gte: range.from,
+            ...(range.to ? { lt: range.to } : {}),
+          },
+        }
+      : {}),
     link: {
       userId,
       ...(linkIds ? { id: { in: linkIds } } : {}),
@@ -17,6 +29,46 @@ export async function getLinkStats(userId: string, linkIds?: string[]) {
   ])
 
   return { totalClicks, uniqueVisitors, returningVisitors }
+}
+
+/** Percent change from previous → current. Null when there is nothing to compare. */
+export function percentChange(current: number, previous: number): number | null {
+  if (previous === 0 && current === 0) return null
+  if (previous === 0) return 100
+  return Math.round(((current - previous) / previous) * 1000) / 10
+}
+
+/** Last `days` vs the `days` before that (e.g. last 7 vs prior 7). */
+export async function getPeriodComparison(userId: string, days = 7) {
+  const now = new Date()
+  const currentFrom = startOfDay(subDays(now, days - 1))
+  const previousFrom = startOfDay(subDays(now, days * 2 - 1))
+
+  const [current, previous] = await Promise.all([
+    getLinkStats(userId, undefined, { from: currentFrom }),
+    getLinkStats(userId, undefined, { from: previousFrom, to: currentFrom }),
+  ])
+
+  const currentReturnRate =
+    current.uniqueVisitors > 0
+      ? Math.round((current.returningVisitors / current.uniqueVisitors) * 1000) / 10
+      : 0
+  const previousReturnRate =
+    previous.uniqueVisitors > 0
+      ? Math.round((previous.returningVisitors / previous.uniqueVisitors) * 1000) / 10
+      : 0
+
+  return {
+    days,
+    current: { ...current, returnRate: currentReturnRate },
+    previous: { ...previous, returnRate: previousReturnRate },
+    changes: {
+      totalClicks: percentChange(current.totalClicks, previous.totalClicks),
+      uniqueVisitors: percentChange(current.uniqueVisitors, previous.uniqueVisitors),
+      returningVisitors: percentChange(current.returningVisitors, previous.returningVisitors),
+      returnRate: percentChange(currentReturnRate, previousReturnRate),
+    },
+  }
 }
 
 export async function getClickTrends(userId: string, days = 14) {
@@ -113,23 +165,25 @@ export async function serializeLink(
 
 export async function getDashboardOverview(userId: string) {
   // All independent queries run in parallel; aggregation happens in the DB.
-  const [recent, top, stats, clickTrends, trafficSources, deviceBreakdown] = await Promise.all([
-    prisma.link.findMany({
-      where: { userId },
-      include: { _count: { select: { clicks: true } } },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-    }),
-    prisma.link.findFirst({
-      where: { userId },
-      include: { _count: { select: { clicks: true } } },
-      orderBy: { clicks: { _count: 'desc' } },
-    }),
-    getLinkStats(userId),
-    getClickTrends(userId),
-    getTrafficSources(userId),
-    getDeviceBreakdown(userId),
-  ])
+  const [recent, top, stats, clickTrends, trafficSources, deviceBreakdown, period] =
+    await Promise.all([
+      prisma.link.findMany({
+        where: { userId },
+        include: { _count: { select: { clicks: true } } },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+      prisma.link.findFirst({
+        where: { userId },
+        include: { _count: { select: { clicks: true } } },
+        orderBy: { clicks: { _count: 'desc' } },
+      }),
+      getLinkStats(userId),
+      getClickTrends(userId),
+      getTrafficSources(userId),
+      getDeviceBreakdown(userId),
+      getPeriodComparison(userId, 7),
+    ])
 
   const linkIds = Array.from(new Set([...recent.map((l) => l.id), ...(top ? [top.id] : [])]))
   const uniqueRows = linkIds.length
@@ -157,6 +211,8 @@ export async function getDashboardOverview(userId: string) {
     uniqueVisitors: stats.uniqueVisitors,
     returningVisitors: stats.returningVisitors,
     conversionRate,
+    changes: period.changes,
+    changeLabel: `vs prior ${period.days} days`,
     topLink: top ? await serializeLink(top, uniqueByLinkId.get(top.id) || 0) : undefined,
     recentLinks,
     clickTrends,

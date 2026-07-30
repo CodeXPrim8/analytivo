@@ -28,24 +28,32 @@ export default async function DashboardPage() {
         <KPICard
           title="Total Clicks"
           value={formatNumber(overview.totalClicks)}
+          change={overview.changes.totalClicks}
+          changeLabel={overview.changeLabel}
           icon={<BarChart3 size={20} style={{ color: '#7c3aed' }} />}
           color="#7c3aed"
         />
         <KPICard
           title="Unique Visitors"
           value={formatNumber(overview.uniqueVisitors)}
+          change={overview.changes.uniqueVisitors}
+          changeLabel={overview.changeLabel}
           icon={<Users size={20} style={{ color: '#06b6d4' }} />}
           color="#06b6d4"
         />
         <KPICard
           title="Returning Visitors"
           value={formatNumber(overview.returningVisitors)}
+          change={overview.changes.returningVisitors}
+          changeLabel={overview.changeLabel}
           icon={<TrendingUp size={20} style={{ color: '#10b981' }} />}
           color="#10b981"
         />
         <KPICard
           title="Return Rate"
           value={`${overview.conversionRate.toFixed(1)}%`}
+          change={overview.changes.returnRate}
+          changeLabel={overview.changeLabel}
           icon={<Percent size={20} style={{ color: '#f59e0b' }} />}
           color="#f59e0b"
         />
