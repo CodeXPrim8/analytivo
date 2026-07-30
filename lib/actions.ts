@@ -6,7 +6,7 @@ import QRCode from 'qrcode'
 import { ensureDatabase, prisma } from '@/lib/db'
 import { requireUser } from '@/lib/session'
 import { generateAlias, isValidVideoUrl, shortUrlFor } from '@/lib/links'
-import { generateInsightsForUser } from '@/lib/insights'
+import { answerInsightQuestion, generateInsightsForUser, insightsProviderLabel } from '@/lib/insights'
 import { serializeLink } from '@/lib/analytics'
 
 async function ready() {
@@ -182,6 +182,7 @@ export async function refreshInsightsAction() {
   const insights = await generateInsightsForUser(user.id)
   revalidatePath('/dashboard/ai-insights')
   return {
+    provider: insightsProviderLabel(),
     insights: insights.map((i) => ({
       ...i,
       actionItems: JSON.parse(i.actionItems) as string[],
@@ -204,16 +205,6 @@ export async function askInsightAction(question: string) {
   const q = question.trim()
   if (!q) return { error: 'Ask a question about your performance' }
 
-  const insights = await generateInsightsForUser(user.id)
-  const answer =
-    insights[0]?.description ||
-    'Create and share more links so Analytivo can answer performance questions with real data.'
-
-  return {
-    answer,
-    insights: insights.map((i) => ({
-      ...i,
-      actionItems: JSON.parse(i.actionItems) as string[],
-    })),
-  }
+  const { answer, provider } = await answerInsightQuestion(user.id, q)
+  return { answer, provider }
 }

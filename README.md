@@ -33,6 +33,7 @@ Set these Environment Variables (Production + Preview):
 - `BETTER_AUTH_SECRET` — long random string
 - `BETTER_AUTH_URL` — `https://analytivo.vercel.app`
 - `NEXT_PUBLIC_APP_URL` — `https://analytivo.vercel.app`
+- `OPENAI_API_KEY` — optional; enables GPT-powered AI Insights (falls back to smart rules without it)
 
 Then redeploy.
 

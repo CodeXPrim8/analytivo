@@ -1,6 +1,6 @@
 import { requireUser } from '@/lib/session'
 import { prisma } from '@/lib/db'
-import { generateInsightsForUser } from '@/lib/insights'
+import { generateInsightsForUser, insightsProviderLabel } from '@/lib/insights'
 import { AIInsightsPanel } from '@/components/AIInsightsPanel'
 
 export default async function AIInsightsPage() {
@@ -16,6 +16,7 @@ export default async function AIInsightsPage() {
 
   return (
     <AIInsightsPanel
+      provider={insightsProviderLabel()}
       initialInsights={insights.map((i) => ({
         id: i.id,
         title: i.title,
