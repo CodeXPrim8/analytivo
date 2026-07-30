@@ -13,7 +13,7 @@ const baseURL = appUrl()
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: 'sqlite',
+    provider: 'postgresql',
   }),
   secret: process.env.BETTER_AUTH_SECRET || process.env.AUTH_SECRET || 'analytivo-dev-secret-change-me-32c',
   baseURL,
