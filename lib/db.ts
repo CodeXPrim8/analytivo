@@ -1,14 +1,14 @@
 import { PrismaClient } from '@prisma/client'
-import fs from 'fs'
-import path from 'path'
+import { INIT_SQL } from '@/lib/schema-sql'
 
 function resolveDatabaseUrl() {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL
-  // Vercel serverless filesystem is read-only except /tmp
+  // On Vercel only /tmp is writable — never use relative file:./dev.db there
   if (process.env.VERCEL) {
+    const configured = process.env.DATABASE_URL
+    if (configured?.includes('/tmp/')) return configured
     return 'file:/tmp/analytivo.db'
   }
-  return 'file:./dev.db'
+  return process.env.DATABASE_URL || 'file:./prisma/dev.db'
 }
 
 process.env.DATABASE_URL = resolveDatabaseUrl()
@@ -29,31 +29,16 @@ if (process.env.NODE_ENV !== 'production' || process.env.VERCEL) {
 }
 
 async function applySchema() {
-  // Cheap existence check
   try {
     await prisma.$queryRaw`SELECT 1 FROM User LIMIT 1`
     return
   } catch {
-    // continue to create schema
+    // Schema missing — create it
   }
 
-  const migrationPath = path.join(
-    process.cwd(),
-    'prisma',
-    'migrations',
-    '20260730051509_init',
-    'migration.sql',
-  )
-
-  if (!fs.existsSync(migrationPath)) {
-    throw new Error('Database migration file missing')
-  }
-
-  const sql = fs.readFileSync(migrationPath, 'utf8')
-  const statements = sql
-    .split(';')
+  const statements = INIT_SQL.split(';')
     .map((s) => s.trim())
-    .filter((s) => s.length > 0 && !s.startsWith('--'))
+    .filter((s) => s.length > 0)
 
   for (const statement of statements) {
     await prisma.$executeRawUnsafe(statement)
@@ -64,6 +49,7 @@ export async function ensureDatabase() {
   if (!globalForPrisma.dbReady) {
     globalForPrisma.dbReady = applySchema().catch((err) => {
       globalForPrisma.dbReady = undefined
+      console.error('[db] ensureDatabase failed', err)
       throw err
     })
   }
