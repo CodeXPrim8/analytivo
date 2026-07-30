@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { BrandLogo } from '@/components/BrandLogo'
+import { AutoRefresh } from '@/components/AutoRefresh'
 
 const sidebarItems = [
   { label: 'Overview', href: '/dashboard', icon: BarChart3 },
@@ -61,6 +62,7 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-background">
+      <AutoRefresh intervalMs={10000} />
       <motion.aside
         initial={{ x: -280 }}
         animate={{ x: 0 }}
