@@ -12,6 +12,7 @@ export default async function SettingsPage() {
         name: dbUser.name,
         email: dbUser.email,
         workspaceName: dbUser.workspaceName,
+        image: dbUser.image,
       }}
     />
   )

@@ -8,6 +8,12 @@ import { requireUser } from '@/lib/session'
 import { generateAlias, isValidVideoUrl, shortUrlFor } from '@/lib/links'
 import { answerInsightQuestion, generateInsightsForUser, insightsProviderLabel } from '@/lib/insights'
 import { serializeLink } from '@/lib/analytics'
+import {
+  listNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+  unreadNotificationCount,
+} from '@/lib/notifications'
 
 async function ready() {
   await ensureDatabase()
@@ -164,23 +170,76 @@ export async function removeTeamMemberAction(id: string) {
 export async function updateProfileAction(input: {
   name: string
   workspaceName: string
+  image?: string | null
 }) {
   const user = await requireUser()
+  const data: { name: string; workspaceName: string; image?: string | null } = {
+    name: input.name.trim(),
+    workspaceName: input.workspaceName.trim() || 'My Workspace',
+  }
+
+  if (input.image !== undefined) {
+    if (input.image === null || input.image === '') {
+      data.image = null
+    } else if (
+      typeof input.image === 'string' &&
+      input.image.startsWith('data:image/') &&
+      input.image.length <= 450_000
+    ) {
+      data.image = input.image
+    } else {
+      return { error: 'Image must be a small JPG/PNG/WebP under ~300KB' }
+    }
+  }
+
   const updated = await prisma.user.update({
     where: { id: user.id },
-    data: {
-      name: input.name.trim(),
-      workspaceName: input.workspaceName.trim() || 'My Workspace',
-    },
+    data,
   })
   revalidatePath('/dashboard/settings')
+  revalidatePath('/dashboard')
   return { user: updated }
+}
+
+export async function getNotificationsAction() {
+  const user = await requireUser()
+  const [items, unreadCount] = await Promise.all([
+    listNotifications(user.id),
+    unreadNotificationCount(user.id),
+  ])
+  return {
+    unreadCount,
+    notifications: items.map((n) => ({
+      id: n.id,
+      title: n.title,
+      body: n.body,
+      type: n.type,
+      href: n.href,
+      read: n.read,
+      createdAt: n.createdAt,
+    })),
+  }
+}
+
+export async function markNotificationReadAction(id: string) {
+  const user = await requireUser()
+  await markNotificationRead(user.id, id)
+  revalidatePath('/dashboard')
+  return { ok: true }
+}
+
+export async function markAllNotificationsReadAction() {
+  const user = await requireUser()
+  await markAllNotificationsRead(user.id)
+  revalidatePath('/dashboard')
+  return { ok: true }
 }
 
 export async function refreshInsightsAction() {
   const user = await requireUser()
   const insights = await generateInsightsForUser(user.id)
   revalidatePath('/dashboard/ai-insights')
+  revalidatePath('/dashboard')
   return {
     provider: insightsProviderLabel(),
     insights: insights.map((i) => ({

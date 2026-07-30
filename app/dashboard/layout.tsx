@@ -17,12 +17,12 @@ import {
   Settings,
   CreditCard,
   HelpCircle,
-  Bell,
   LogOut,
 } from 'lucide-react'
 import Link from 'next/link'
 import { BrandLogo } from '@/components/BrandLogo'
 import { AutoRefresh } from '@/components/AutoRefresh'
+import { NotificationBell } from '@/components/NotificationBell'
 
 const sidebarItems = [
   { label: 'Overview', href: '/dashboard', icon: BarChart3 },
@@ -113,21 +113,28 @@ export default function DashboardLayout({
         </div>
 
         <div className="border-t border-border p-4">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer text-left"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <img src={avatar} alt={user?.name || 'User'} className="w-8 h-8 rounded-full" />
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+            <Link
+              href="/dashboard/settings"
+              className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <img src={avatar} alt={user?.name || 'User'} className="w-8 h-8 rounded-full object-cover" />
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">
                   {isLoading ? 'Loading...' : user?.name || 'Account'}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
-            </div>
-            <LogOut size={16} className="text-muted-foreground flex-shrink-0" />
-          </button>
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              aria-label="Log out"
+            >
+              <LogOut size={16} className="text-muted-foreground" />
+            </button>
+          </div>
         </div>
       </motion.aside>
 
@@ -146,11 +153,11 @@ export default function DashboardLayout({
             </h1>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-muted rounded-lg transition-colors relative">
-              <Bell size={20} />
-            </button>
-            <img src={avatar} alt="" className="w-8 h-8 rounded-full" />
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <Link href="/dashboard/settings" className="hover:opacity-80">
+              <img src={avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
+            </Link>
           </div>
         </header>
 

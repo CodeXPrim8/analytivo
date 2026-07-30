@@ -6,6 +6,7 @@ import {
   getTrafficSources,
 } from '@/lib/analytics'
 import { shortUrlFor } from '@/lib/links'
+import { createNotifications } from '@/lib/notifications'
 
 export type GeneratedInsight = {
   title: string
@@ -369,6 +370,27 @@ async function persistInsights(userId: string, insights: GeneratedInsight[]) {
       actionItems: JSON.stringify(insight.actionItems),
     })),
   })
+
+  // Push a concise alert so the bell lights up with the latest insight.
+  if (insights.length > 0) {
+    await createNotifications(userId, [
+      {
+        title: 'New AI insights ready',
+        body: insights
+          .slice(0, 3)
+          .map((i) => i.title)
+          .join(' · '),
+        type: 'insight',
+        href: '/dashboard/ai-insights',
+      },
+      {
+        title: insights[0].title,
+        body: insights[0].description,
+        type: 'insight',
+        href: '/dashboard/ai-insights',
+      },
+    ])
+  }
 
   return prisma.insight.findMany({
     where: { userId },

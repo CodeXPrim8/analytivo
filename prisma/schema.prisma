@@ -26,6 +26,22 @@ model User {
   reports       Report[]
   teamMembers   TeamMember[]
   insights      Insight[]
+  notifications Notification[]
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  type      String   @default("insight")
+  href      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }
 
 model Session {

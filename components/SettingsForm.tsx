@@ -1,35 +1,89 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { updateProfileAction } from '@/lib/actions'
 import { authClient } from '@/lib/auth-client'
 
+async function fileToAvatarDataUrl(file: File): Promise<string> {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Please choose an image file (JPG, PNG, or WebP)')
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error('Image must be under 5MB')
+  }
+
+  const bitmap = await createImageBitmap(file)
+  const size = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Could not process image')
+
+  const scale = Math.max(size / bitmap.width, size / bitmap.height)
+  const w = bitmap.width * scale
+  const h = bitmap.height * scale
+  ctx.drawImage(bitmap, (size - w) / 2, (size - h) / 2, w, h)
+  bitmap.close()
+
+  return canvas.toDataURL('image/jpeg', 0.85)
+}
+
 export function SettingsForm({
   initial,
 }: {
-  initial: { name: string; email: string; workspaceName: string }
+  initial: { name: string; email: string; workspaceName: string; image: string | null }
 }) {
   const router = useRouter()
+  const fileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState(initial)
+  const [preview, setPreview] = useState(initial.image)
   const [password, setPassword] = useState({ current: '', next: '' })
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [pending, startTransition] = useTransition()
+
+  const fallbackAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(form.email)}`
 
   const saveProfile = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setMessage('')
     startTransition(async () => {
-      await updateProfileAction({
+      const result = await updateProfileAction({
         name: form.name,
         workspaceName: form.workspaceName,
+        image: preview,
+      })
+      if (result.error) {
+        setError(result.error)
+        return
+      }
+      // Keep Better Auth client session in sync with the new photo/name.
+      await authClient.updateUser({
+        name: form.name,
+        image: preview || undefined,
       })
       setMessage('Profile saved')
       router.refresh()
     })
+  }
+
+  const onPickImage = async (file: File | null) => {
+    if (!file) return
+    setError('')
+    try {
+      const dataUrl = await fileToAvatarDataUrl(file)
+      setPreview(dataUrl)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not read image')
+    }
+  }
+
+  const removeImage = () => {
+    setPreview(null)
   }
 
   const updatePassword = (e: React.FormEvent) => {
@@ -54,7 +108,7 @@ export function SettingsForm({
     <div className="max-w-2xl">
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Settings</h1>
-        <p className="text-muted-foreground">Manage your account and workspace</p>
+        <p className="text-muted-foreground">Manage your account, photo, and workspace</p>
       </div>
 
       {message && (
@@ -69,7 +123,36 @@ export function SettingsForm({
       )}
 
       <form onSubmit={saveProfile} className="mb-8 space-y-4 rounded-xl border border-border bg-card/50 p-6">
-        <h2 className="font-semibold">Account</h2>
+        <h2 className="font-semibold">Profile</h2>
+
+        <div className="flex items-center gap-4">
+          <img
+            src={preview || fallbackAvatar}
+            alt="Profile"
+            className="w-20 h-20 rounded-full object-cover border border-border bg-muted"
+          />
+          <div className="space-y-2">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={(e) => void onPickImage(e.target.files?.[0] || null)}
+            />
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" onClick={() => fileRef.current?.click()}>
+                Upload photo / logo
+              </Button>
+              {preview && (
+                <Button type="button" variant="outline" onClick={removeImage}>
+                  Remove
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">JPG, PNG, or WebP. Cropped to a square automatically.</p>
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm mb-2">Name</label>
           <input
