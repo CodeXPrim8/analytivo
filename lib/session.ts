@@ -13,7 +13,7 @@ export async function getSession() {
 export async function requireUser() {
   const session = await getSession()
   if (!session?.user) {
-    redirect('/login')
+    redirect('/login?error=session-expired')
   }
   return session.user
 }

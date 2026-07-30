@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
+import { signOut } from '@/lib/auth-client'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,6 +15,14 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [remember, setRemember] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('error') === 'session-expired') {
+      void signOut()
+      setError('Your session expired on the server. Please sign in again.')
+    }
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
