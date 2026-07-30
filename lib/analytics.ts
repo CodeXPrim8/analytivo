@@ -42,16 +42,17 @@ export async function getClickTrends(userId: string, days = 14) {
 }
 
 export async function getTrafficSources(userId: string) {
-  const clicks = await prisma.click.findMany({
+  const grouped = await prisma.click.groupBy({
+    by: ['source'],
     where: { link: { userId } },
-    select: { source: true },
+    _count: { _all: true },
   })
   const counts = new Map<string, number>()
-  for (const c of clicks) {
-    const source = c.source || 'direct'
-    counts.set(source, (counts.get(source) || 0) + 1)
+  for (const g of grouped) {
+    const source = g.source || 'direct'
+    counts.set(source, (counts.get(source) || 0) + g._count._all)
   }
-  const total = clicks.length || 1
+  const total = Array.from(counts.values()).reduce((a, b) => a + b, 0) || 1
   return Array.from(counts.entries())
     .map(([source, clicks]) => ({
       source,
@@ -62,16 +63,17 @@ export async function getTrafficSources(userId: string) {
 }
 
 export async function getDeviceBreakdown(userId: string) {
-  const clicks = await prisma.click.findMany({
+  const grouped = await prisma.click.groupBy({
+    by: ['device'],
     where: { link: { userId } },
-    select: { device: true },
+    _count: { _all: true },
   })
   const counts = new Map<string, number>()
-  for (const c of clicks) {
-    const device = c.device || 'desktop'
-    counts.set(device, (counts.get(device) || 0) + 1)
+  for (const g of grouped) {
+    const device = g.device || 'desktop'
+    counts.set(device, (counts.get(device) || 0) + g._count._all)
   }
-  const total = clicks.length || 1
+  const total = Array.from(counts.values()).reduce((a, b) => a + b, 0) || 1
   return Array.from(counts.entries())
     .map(([device, clicks]) => ({
       device,
@@ -110,36 +112,40 @@ export async function serializeLink(
 }
 
 export async function getDashboardOverview(userId: string) {
-  const links = await prisma.link.findMany({
-    where: { userId },
-    include: { _count: { select: { clicks: true } } },
-    orderBy: { createdAt: 'desc' },
-  })
-
-  const stats = await getLinkStats(userId)
-  const clickTrends = await getClickTrends(userId)
-  const trafficSources = await getTrafficSources(userId)
-  const deviceBreakdown = await getDeviceBreakdown(userId)
-
-  const uniqueByLink = await Promise.all(
-    links.slice(0, 5).map(async (link) => {
-      const unique = await prisma.click.groupBy({
-        by: ['visitorId'],
-        where: { linkId: link.id },
-      })
-      return serializeLink(link, unique.length)
+  // All independent queries run in parallel; aggregation happens in the DB.
+  const [recent, top, stats, clickTrends, trafficSources, deviceBreakdown] = await Promise.all([
+    prisma.link.findMany({
+      where: { userId },
+      include: { _count: { select: { clicks: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
     }),
-  )
+    prisma.link.findFirst({
+      where: { userId },
+      include: { _count: { select: { clicks: true } } },
+      orderBy: { clicks: { _count: 'desc' } },
+    }),
+    getLinkStats(userId),
+    getClickTrends(userId),
+    getTrafficSources(userId),
+    getDeviceBreakdown(userId),
+  ])
 
-  const top = links.slice().sort((a, b) => b._count.clicks - a._count.clicks)[0]
-  const topUnique = top
-    ? (
-        await prisma.click.groupBy({
-          by: ['visitorId'],
-          where: { linkId: top.id },
-        })
-      ).length
-    : 0
+  const linkIds = Array.from(new Set([...recent.map((l) => l.id), ...(top ? [top.id] : [])]))
+  const uniqueRows = linkIds.length
+    ? await prisma.click.groupBy({
+        by: ['linkId', 'visitorId'],
+        where: { linkId: { in: linkIds } },
+      })
+    : []
+  const uniqueByLinkId = new Map<string, number>()
+  for (const row of uniqueRows) {
+    uniqueByLinkId.set(row.linkId, (uniqueByLinkId.get(row.linkId) || 0) + 1)
+  }
+
+  const recentLinks = await Promise.all(
+    recent.map((link) => serializeLink(link, uniqueByLinkId.get(link.id) || 0)),
+  )
 
   const conversionRate =
     stats.uniqueVisitors > 0
@@ -151,8 +157,8 @@ export async function getDashboardOverview(userId: string) {
     uniqueVisitors: stats.uniqueVisitors,
     returningVisitors: stats.returningVisitors,
     conversionRate,
-    topLink: top ? await serializeLink(top, topUnique) : undefined,
-    recentLinks: uniqueByLink,
+    topLink: top ? await serializeLink(top, uniqueByLinkId.get(top.id) || 0) : undefined,
+    recentLinks,
     clickTrends,
     trafficSources,
     deviceBreakdown,

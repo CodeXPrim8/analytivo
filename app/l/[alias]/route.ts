@@ -1,12 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { ensureDatabase, prisma } from '@/lib/db'
+import { NextRequest, NextResponse, after } from 'next/server'
+import { prisma } from '@/lib/db'
 import { parseUserAgent, referrerSource, visitorIdFrom } from '@/lib/tracking'
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ alias: string }> },
 ) {
-  await ensureDatabase()
   const { alias } = await context.params
   const link = await prisma.link.findUnique({ where: { alias } })
 
@@ -24,6 +23,7 @@ export async function GET(
     request.headers.get('x-real-ip') ||
     '0.0.0.0'
   const referrer = request.headers.get('referer')
+  const language = request.headers.get('accept-language')?.split(',')[0] || null
   const visitorId = visitorIdFrom(ip, ua)
   const { device, browser, os } = parseUserAgent(ua)
   const source =
@@ -32,23 +32,26 @@ export async function GET(
     link.source ||
     'direct'
 
-  const prior = await prisma.click.findFirst({
-    where: { linkId: link.id, visitorId },
-    select: { id: true },
-  })
+  // Record the click after the redirect is sent so visitors don't wait on DB writes.
+  after(async () => {
+    const prior = await prisma.click.findFirst({
+      where: { linkId: link.id, visitorId },
+      select: { id: true },
+    })
 
-  await prisma.click.create({
-    data: {
-      linkId: link.id,
-      visitorId,
-      referrer: referrer || null,
-      source,
-      device,
-      browser,
-      os,
-      language: request.headers.get('accept-language')?.split(',')[0] || null,
-      isReturning: Boolean(prior),
-    },
+    await prisma.click.create({
+      data: {
+        linkId: link.id,
+        visitorId,
+        referrer: referrer || null,
+        source,
+        device,
+        browser,
+        os,
+        language,
+        isReturning: Boolean(prior),
+      },
+    })
   })
 
   return NextResponse.redirect(link.originalUrl, { status: 302 })
