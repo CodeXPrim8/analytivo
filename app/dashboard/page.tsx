@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { BarChart3, Users, TrendingUp, Percent } from 'lucide-react'
 import { KPICard } from '@/components/KPICard'
 import { AnalyticsChart } from '@/components/AnalyticsChart'
+import { StatBarList } from '@/components/StatBarList'
 import { requireUser } from '@/lib/session'
 import { getDashboardOverview } from '@/lib/analytics'
 import { formatNumber, formatRelativeTime } from '@/lib/utils-helpers'
@@ -50,7 +51,7 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6 mb-8">
+      <div className="mb-8">
         <AnalyticsChart
           title="Click Trends (14 days)"
           data={overview.clickTrends}
@@ -59,64 +60,68 @@ export default async function DashboardPage() {
           color="#7c3aed"
           emptyMessage="No clicks in the last 14 days. Share a short link to see trends here."
         />
-        <AnalyticsChart
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        <StatBarList
           title="Traffic Sources"
-          data={overview.trafficSources.map((s) => ({
-            date: s.source,
-            clicks: s.clicks,
+          items={overview.trafficSources.map((s) => ({
+            label: s.source,
+            value: s.clicks,
+            percentage: s.percentage,
           }))}
-          type="bar"
-          dataKey="clicks"
-          color="#06b6d4"
           emptyMessage="No traffic yet. Sources appear once people click your links."
+        />
+        <StatBarList
+          title="Device Breakdown"
+          items={overview.deviceBreakdown.map((d) => ({
+            label: d.device,
+            value: d.clicks,
+            percentage: d.percentage,
+          }))}
+          emptyMessage="No clicks yet. Devices appear once people open your links."
         />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="rounded-xl border border-border bg-card/50 p-6">
-          <h2 className="text-lg font-semibold mb-4">Device Breakdown</h2>
-          {overview.deviceBreakdown.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No clicks yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {overview.deviceBreakdown.map((device) => (
-                <div key={device.device} className="flex items-center justify-between text-sm">
-                  <span className="capitalize">{device.device}</span>
-                  <span className="text-muted-foreground">
-                    {device.clicks} ({device.percentage}%)
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-xl border border-border bg-card/50 p-6">
-          <h2 className="text-lg font-semibold mb-4">Recent Links</h2>
-          {overview.recentLinks.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No links yet.{' '}
-              <Link href="/dashboard/links" className="text-primary hover:underline">
-                Create your first link
-              </Link>
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {overview.recentLinks.map((link) => (
-                <div key={link.id} className="flex items-center justify-between gap-3 text-sm">
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{link.title}</p>
-                    <p className="text-xs text-accent truncate">{link.shortUrl}</p>
-                  </div>
-                  <div className="text-right text-muted-foreground shrink-0">
-                    <p>{formatNumber(link.clickCount)} clicks</p>
-                    <p className="text-xs">{formatRelativeTime(new Date(link.createdAt))}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+      <div className="rounded-xl border border-border bg-card/50 p-6">
+        <h2 className="text-lg font-semibold mb-4">Recent Links</h2>
+        {overview.recentLinks.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No links yet.{' '}
+            <Link href="/dashboard/links" className="text-primary hover:underline">
+              Create your first link
+            </Link>{' '}
+            to start collecting clicks.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-muted-foreground border-b border-border">
+                  <th className="font-medium py-3 pr-4">Link</th>
+                  <th className="font-medium py-3 pr-4">Clicks</th>
+                  <th className="font-medium py-3 pr-4">Unique</th>
+                  <th className="font-medium py-3">Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                {overview.recentLinks.map((link) => (
+                  <tr key={link.id} className="border-b border-border/50 last:border-0">
+                    <td className="py-3 pr-4 min-w-0 max-w-xs">
+                      <p className="font-semibold truncate">{link.title}</p>
+                      <p className="text-xs text-accent truncate">{link.shortUrl}</p>
+                    </td>
+                    <td className="py-3 pr-4 font-semibold">{formatNumber(link.clickCount)}</td>
+                    <td className="py-3 pr-4 font-semibold">{formatNumber(link.uniqueClicks)}</td>
+                    <td className="py-3 text-muted-foreground">
+                      {formatRelativeTime(new Date(link.createdAt))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

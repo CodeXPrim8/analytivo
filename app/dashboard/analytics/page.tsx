@@ -1,4 +1,5 @@
 import { AnalyticsChart } from '@/components/AnalyticsChart'
+import { StatBarList } from '@/components/StatBarList'
 import { requireUser } from '@/lib/session'
 import {
   getClickTrends,
@@ -44,23 +45,15 @@ export default async function AnalyticsPage() {
         />
       </div>
 
-      <div className="rounded-xl border border-border bg-card/50 p-6">
-        <h2 className="text-lg font-semibold mb-4">Devices</h2>
-        {devices.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Share a link to populate device analytics.</p>
-        ) : (
-          <div className="space-y-3">
-            {devices.map((d) => (
-              <div key={d.device} className="flex justify-between text-sm">
-                <span className="capitalize">{d.device}</span>
-                <span>
-                  {d.clicks} · {d.percentage}%
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <StatBarList
+        title="Devices"
+        items={devices.map((d) => ({
+          label: d.device,
+          value: d.clicks,
+          percentage: d.percentage,
+        }))}
+        emptyMessage="Share a link to populate device analytics."
+      />
     </div>
   )
 }
