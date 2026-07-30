@@ -9,6 +9,7 @@ interface AnalyticsChartProps {
   type?: 'line' | 'bar'
   dataKey: string
   color?: string
+  emptyMessage?: string
 }
 
 export function AnalyticsChart({
@@ -17,7 +18,10 @@ export function AnalyticsChart({
   type = 'line',
   dataKey,
   color = '#7c3aed',
+  emptyMessage = 'No data yet. Share a link to start collecting clicks.',
 }: AnalyticsChartProps) {
+  const hasData = data.length > 0 && data.some((d) => (d?.[dataKey] ?? 0) > 0)
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -26,6 +30,11 @@ export function AnalyticsChart({
       className="rounded-xl border border-border bg-card/50 p-6"
     >
       <h3 className="text-lg font-semibold mb-6">{title}</h3>
+      {!hasData ? (
+        <div className="flex items-center justify-center h-[300px]">
+          <p className="text-sm text-muted-foreground text-center px-6">{emptyMessage}</p>
+        </div>
+      ) : (
       <ResponsiveContainer width="100%" height={300}>
         {type === 'line' ? (
           <LineChart data={data}>
@@ -72,6 +81,7 @@ export function AnalyticsChart({
           </BarChart>
         )}
       </ResponsiveContainer>
+      )}
     </motion.div>
   )
 }

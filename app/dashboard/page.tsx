@@ -57,6 +57,7 @@ export default async function DashboardPage() {
           type="line"
           dataKey="clicks"
           color="#7c3aed"
+          emptyMessage="No clicks in the last 14 days. Share a short link to see trends here."
         />
         <AnalyticsChart
           title="Traffic Sources"
@@ -67,6 +68,7 @@ export default async function DashboardPage() {
           type="bar"
           dataKey="clicks"
           color="#06b6d4"
+          emptyMessage="No traffic yet. Sources appear once people click your links."
         />
       </div>
 
