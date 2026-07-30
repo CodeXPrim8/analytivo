@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-.pnpm-store/
 
 # Next.js
 .next/
@@ -22,14 +21,16 @@ prisma/dev.db-journal
 .DS_Store
 Thumbs.db
 
-# Archives / tooling junk
+# Archives / tooling
 *.zip
 .vercel/
 .snowflake/
 .v0-trash/
-__v0_runtime_loader.js
-__v0_devtools.tsx
-__v0_jsx-dev-runtime.ts
+.claude/
+.windsurf/
+
+# Leftover nested install (local only)
+/UI/
 
 # Generated
 lib/generated/
