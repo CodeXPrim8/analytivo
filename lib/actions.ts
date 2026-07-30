@@ -3,11 +3,15 @@
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import QRCode from 'qrcode'
-import { prisma } from '@/lib/db'
+import { ensureDatabase, prisma } from '@/lib/db'
 import { requireUser } from '@/lib/session'
 import { generateAlias, isValidVideoUrl, shortUrlFor } from '@/lib/links'
 import { generateInsightsForUser } from '@/lib/insights'
 import { serializeLink } from '@/lib/analytics'
+
+async function ready() {
+  await ensureDatabase()
+}
 
 const createLinkSchema = z.object({
   title: z.string().min(1).max(120),
@@ -18,6 +22,7 @@ const createLinkSchema = z.object({
 })
 
 export async function createLinkAction(input: z.infer<typeof createLinkSchema>) {
+  await ready()
   const user = await requireUser()
   const data = createLinkSchema.parse(input)
 

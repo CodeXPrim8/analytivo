@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { ensureDatabase, prisma } from '@/lib/db'
 import { parseUserAgent, referrerSource, visitorIdFrom } from '@/lib/tracking'
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ alias: string }> },
 ) {
+  await ensureDatabase()
   const { alias } = await context.params
   const link = await prisma.link.findUnique({ where: { alias } })
 
@@ -36,7 +37,6 @@ export async function GET(
     select: { id: true },
   })
 
-  // Fire-and-forget style: await to keep SQLite consistent in serverless-ish local use
   await prisma.click.create({
     data: {
       linkId: link.id,

@@ -1,8 +1,10 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
+import { ensureDatabase } from '@/lib/db'
 
 export async function getSession() {
+  await ensureDatabase()
   return auth.api.getSession({
     headers: await headers(),
   })
