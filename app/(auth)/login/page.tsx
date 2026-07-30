@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -9,7 +8,6 @@ import { useAuth } from '@/lib/auth-context'
 import { signOut } from '@/lib/auth-client'
 
 export default function LoginPage() {
-  const router = useRouter()
   const { login } = useAuth()
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
@@ -19,8 +17,10 @@ export default function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('error') === 'session-expired') {
-      void signOut()
-      setError('Your session expired on the server. Please sign in again.')
+      void signOut().finally(() => {
+        setError('Your previous session is no longer valid. Please sign in again.')
+        window.history.replaceState({}, '', '/login')
+      })
     }
   }, [])
 
@@ -35,11 +35,10 @@ export default function LoginPage() {
 
     try {
       await login(formData.email, formData.password)
-      router.push('/dashboard')
-      router.refresh()
+      // Full navigation so the new session cookie is always sent to the server.
+      window.location.assign('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.')
-    } finally {
       setSubmitting(false)
     }
   }

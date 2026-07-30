@@ -1,14 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/lib/auth-context'
 
 export default function SignupPage() {
-  const router = useRouter()
   const { signup } = useAuth()
   const [formData, setFormData] = useState({ name: '', email: '', password: '', workspace: '' })
   const [error, setError] = useState('')
@@ -36,11 +34,9 @@ export default function SignupPage() {
     setSubmitting(true)
     try {
       await signup(formData.name, formData.email, formData.password, formData.workspace)
-      router.push('/dashboard')
-      router.refresh()
+      window.location.assign('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed. Please try again.')
-    } finally {
       setSubmitting(false)
     }
   }
