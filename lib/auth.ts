@@ -19,14 +19,27 @@ function appFallbackUrl() {
   return 'http://localhost:3000'
 }
 
+/** Domains pointed at this app (signup/login must trust each origin). */
+const APP_HOSTS = [
+  'analytivo.net',
+  'www.analytivo.net',
+  'analytivo.xyz',
+  'www.analytivo.xyz',
+  'analytivo.com.ng',
+  'www.analytivo.com.ng',
+  'analytivo.top',
+  'www.analytivo.top',
+  'analytivo.vercel.app',
+]
+
 const fallbackURL = appFallbackUrl()
 
 const allowedHosts = Array.from(
   new Set(
     [
       'localhost:3000',
-      'analytivo.vercel.app',
       '*.vercel.app',
+      ...APP_HOSTS,
       hostFromUrl(process.env.BETTER_AUTH_URL),
       hostFromUrl(process.env.NEXT_PUBLIC_APP_URL),
       ...(process.env.AUTH_ALLOWED_HOSTS?.split(',').map((h) => h.trim()).filter(Boolean) ?? []),
@@ -35,14 +48,16 @@ const allowedHosts = Array.from(
 )
 
 const trustedOrigins = Array.from(
-  new Set([
-    fallbackURL,
-    'https://analytivo.vercel.app',
-    'http://localhost:3000',
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, ''),
-    process.env.BETTER_AUTH_URL?.replace(/\/$/, ''),
-    ...(process.env.AUTH_TRUSTED_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean) ?? []),
-  ].filter(Boolean) as string[]),
+  new Set(
+    [
+      fallbackURL,
+      'http://localhost:3000',
+      ...APP_HOSTS.map((host) => `https://${host}`),
+      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, ''),
+      process.env.BETTER_AUTH_URL?.replace(/\/$/, ''),
+      ...(process.env.AUTH_TRUSTED_ORIGINS?.split(',').map((o) => o.trim()).filter(Boolean) ?? []),
+    ].filter(Boolean) as string[],
+  ),
 )
 
 export const auth = betterAuth({

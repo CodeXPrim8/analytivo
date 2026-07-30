@@ -31,9 +31,11 @@ Set these Environment Variables (Production + Preview):
 - `DATABASE_URL` — Supabase pooler URI (`6543` + `pgbouncer=true`)
 - `DIRECT_URL` — Supabase session/direct URI (`5432`)
 - `BETTER_AUTH_SECRET` — long random string
-- `BETTER_AUTH_URL` — `https://analytivo.vercel.app`
-- `NEXT_PUBLIC_APP_URL` — `https://analytivo.vercel.app`
+- `BETTER_AUTH_URL` — primary domain, e.g. `https://analytivo.net`
+- `NEXT_PUBLIC_APP_URL` — same primary domain (used for short links)
 - `OPENAI_API_KEY` — optional; enables GPT-powered AI Insights (falls back to smart rules without it)
+
+Auth also trusts these hosts by default: `analytivo.net`, `analytivo.xyz`, `analytivo.com.ng`, `analytivo.top` (and `www` variants), plus `analytivo.vercel.app`.
 
 Then redeploy.
 
