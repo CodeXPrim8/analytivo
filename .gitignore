@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+
+# Env / secrets
+.env
+.env.local
+.env*.local
+
+# Database
+*.db
+*.db-journal
+prisma/dev.db
+prisma/dev.db-journal
+
+# Logs / OS
+*.log
+.DS_Store
+Thumbs.db
+
+# Archives / tooling junk
+*.zip
+.vercel/
+.snowflake/
+.v0-trash/
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+
+# Generated
+lib/generated/

@@ -1,0 +1,1444 @@
+# PROJECT DESCRIPTION
+
+## Kaldra Video Intelligence Platform
+
+## 1. Project Overview
+
+Kaldra is a video-link analytics and marketing intelligence platform that allows users to paste links from popular video platforms and generate new branded, trackable links.
+
+Supported video platforms may include:
+
+* YouTube
+* TikTok
+* Instagram
+* Facebook
+* Vimeo
+* Twitch
+* X
+* Dailymotion
+* Other publicly accessible video URLs
+
+Instead of sharing the original video link directly, users share a Kaldra-generated link such as:
+
+`watch.kaldra.ng/abc123`
+
+When someone clicks the Kaldra link, the platform records permitted analytics information and then redirects the visitor to the original video.
+
+The main purpose of Kaldra is not simply to shorten links. Its real value is to help creators, marketers, churches, businesses, educators, event organizers, influencers, and agencies understand how their video links perform across different platforms, audiences, locations, campaigns, and devices.
+
+Kaldra should transform raw click data into useful marketing intelligence and practical recommendations.
+
+The central product message is:
+
+**Turn every shared video link into actionable marketing intelligence.**
+
+---
+
+# 2. The Problem Kaldra Solves
+
+Millions of people share video links every day through WhatsApp, Instagram, Facebook, TikTok, X, email, websites, QR codes, and other channels.
+
+However, when users share the original video link, they often have limited control over the analytics.
+
+For example, a user may know that a YouTube video received 5,000 views, but they may not know:
+
+* How many people arrived from WhatsApp
+* Which influencer generated the most traffic
+* Which campaign performed best
+* Which QR code generated the most clicks
+* Which city produced the highest engagement
+* What time most people clicked
+* Whether visitors were new or returning
+* Which device visitors used
+* Which link placement performed best
+* Which marketing channel should receive more attention
+
+Kaldra solves this problem by placing an intelligent tracking and campaign-management layer between the shared link and the original video destination.
+
+---
+
+# 3. Main User Flow
+
+The platform should provide a simple and fast experience.
+
+## Step 1: Create an Account
+
+A user visits the Kaldra website and creates an account using:
+
+* Email and password
+* Google sign-in
+* Apple sign-in
+* Microsoft sign-in
+
+Business users may also be able to create an organization or team account.
+
+## Step 2: Paste a Video Link
+
+The user pastes a supported video URL into a clearly visible input field.
+
+Example:
+
+`https://youtube.com/watch?v=example123`
+
+## Step 3: Customize the Link
+
+The user may customize:
+
+* Link title
+* Campaign name
+* Short-link alias
+* Link destination
+* Branded domain
+* UTM parameters
+* Link expiration date
+* Password protection
+* Geo restrictions
+* Tags
+* Campaign owner
+* Traffic-source label
+
+## Step 4: Generate a Trackable Link
+
+The platform generates a short branded link.
+
+Example:
+
+`watch.kaldra.ng/sundayservice`
+
+## Step 5: Share the Link
+
+The user shares the generated link through:
+
+* WhatsApp
+* Facebook
+* Instagram
+* TikTok
+* X
+* Email
+* SMS
+* QR code
+* Website
+* Printed materials
+* Influencers
+* Affiliate partners
+
+## Step 6: Track Visitor Activity
+
+When a visitor clicks the link, Kaldra records available and permitted information such as:
+
+* Click date and time
+* Device type
+* Browser
+* Operating system
+* Referring source
+* Approximate location
+* Language
+* Campaign parameters
+* New or returning visitor status
+
+The visitor is then redirected quickly to the original video.
+
+## Step 7: View Analytics
+
+The link owner can view live analytics from the dashboard.
+
+## Step 8: Receive AI Recommendations
+
+The platform analyzes the data and provides recommendations such as:
+
+* Best time to share future videos
+* Best-performing traffic source
+* Highest-performing campaign
+* Best-performing city or location
+* Underperforming channels
+* Growth or decline in traffic
+* Returning-visitor trends
+* Suggested budget allocation
+* Suggested campaign improvements
+
+---
+
+# 4. Target Users
+
+Kaldra should be designed for both individuals and organizations.
+
+## Content Creators
+
+Creators can measure which social platforms, communities, and collaborations generate the most traffic.
+
+## Influencers
+
+Influencers can create separate links for campaigns and prove how much traffic they generated for a brand.
+
+## Digital Marketers
+
+Marketers can track campaign performance across several channels from one dashboard.
+
+## Churches and Religious Organizations
+
+Churches can track sermon links, online services, conference videos, event promotions, QR codes, branches, and outreach campaigns.
+
+## Businesses
+
+Businesses can track product videos, advertisements, launch campaigns, customer education videos, and sales presentations.
+
+## Schools and Educators
+
+Schools, trainers, and course creators can track educational videos, student access, campaign activity, and course promotions.
+
+## Event Organizers
+
+Event organizers can track promotional videos, QR-code scans, partner traffic, and audience locations.
+
+## Agencies
+
+Marketing agencies can manage links, campaigns, clients, reports, and team members from one platform.
+
+## Affiliates
+
+Affiliate marketers can create campaign-specific video links and measure traffic from different sources.
+
+## Media Organizations
+
+Media companies can track video distribution across websites, social networks, newsletters, and messaging applications.
+
+---
+
+# 5. Website Structure
+
+The Kaldra platform should have two major sections:
+
+1. The public marketing website
+2. The authenticated user dashboard
+
+---
+
+# 6. Public Marketing Website
+
+## 6.1 Home Page
+
+The homepage should immediately communicate what the platform does.
+
+### Hero Section
+
+Main headline:
+
+**Turn Every Video Link Into Marketing Intelligence**
+
+Supporting text:
+
+Create branded video links, track every click, understand your audience, and receive AI-powered recommendations that help your campaigns perform better.
+
+Primary button:
+
+**Create Your Free Link**
+
+Secondary button:
+
+**View Demo Dashboard**
+
+The hero section should include:
+
+* Video-link input field
+* Example generated link
+* Analytics-dashboard preview
+* Supported-platform icons
+* Short animation showing the link-generation process
+
+### Trust or Social-Proof Section
+
+This section may display:
+
+* Number of links created
+* Number of clicks tracked
+* Number of countries reached
+* Customer logos
+* Testimonials
+* Privacy and security indicators
+
+Until real statistics are available, placeholders should be used instead of false claims.
+
+### How It Works Section
+
+Show the process in four steps:
+
+1. Paste a video URL
+2. Create a branded link
+3. Share it anywhere
+4. Track performance and receive AI insights
+
+### Features Preview
+
+Highlight the main product features:
+
+* Smart short links
+* Real-time analytics
+* Campaign tracking
+* QR-code generation
+* Custom domains
+* AI recommendations
+* A/B testing
+* Team collaboration
+* Exportable reports
+* API access
+
+### Analytics Preview
+
+Show example analytics cards:
+
+* Total clicks
+* Unique visitors
+* Returning visitors
+* Top location
+* Top device
+* Top traffic source
+* Best-performing campaign
+* Peak traffic time
+
+### AI Insights Preview
+
+Display realistic examples such as:
+
+“WhatsApp generated 63% of your traffic this week.”
+
+“Most visitors clicked between 7 PM and 10 PM.”
+
+“Tuesday campaigns received 31% more clicks than Friday campaigns.”
+
+“Your Instagram campaign is underperforming compared with Facebook.”
+
+“Consider sharing your next video at approximately 8 PM.”
+
+### Supported Platforms
+
+Display platform icons and names for:
+
+* YouTube
+* TikTok
+* Instagram
+* Facebook
+* Vimeo
+* Twitch
+* X
+* Dailymotion
+
+The website should clearly state that Kaldra tracks traffic to shared links and does not replace the original video-hosting platform.
+
+### Use Cases
+
+Create dedicated cards for:
+
+* Creators
+* Churches
+* Businesses
+* Marketers
+* Agencies
+* Educators
+* Events
+* Influencers
+
+### Pricing Preview
+
+Display the available subscription plans with a comparison table.
+
+### Final Call to Action
+
+Headline:
+
+**Start Understanding Your Video Audience Today**
+
+Button:
+
+**Create a Free Account**
+
+---
+
+## 6.2 Features Page
+
+The features page should explain each major capability in detail.
+
+### Smart Link Management
+
+Users should be able to:
+
+* Create short links
+* Edit destination URLs
+* Create custom aliases
+* Organize links using folders and tags
+* Duplicate links
+* Archive links
+* Pause links
+* Set expiration dates
+* protect links with passwords
+* restrict access by country
+* define redirect rules
+* add campaign parameters
+
+### Real-Time Analytics
+
+The platform should show:
+
+* Total clicks
+* Unique clicks
+* Returning visitors
+* Click trends
+* Hourly activity
+* Daily activity
+* Weekly activity
+* Monthly activity
+* Device category
+* Browser
+* Operating system
+* Language
+* Approximate location
+* Referring website or application
+* Campaign source
+* QR-code scans
+
+### Campaign Tracking
+
+Users should be able to create campaigns and group multiple links under each campaign.
+
+Campaign data should include:
+
+* Campaign name
+* Campaign objective
+* Start date
+* End date
+* Budget
+* Channel
+* Influencer
+* Affiliate
+* Target audience
+* Location
+* Performance results
+
+### QR-Code Generator
+
+Each link should automatically have a QR code.
+
+Users should be able to:
+
+* Download QR code as PNG
+* Download QR code as SVG
+* Download QR code as PDF
+* Add a logo
+* Add a frame
+* Add a call-to-action label
+* Customize appearance
+* Create separate QR codes for different campaigns
+* Track scans independently
+
+### AI Marketing Intelligence
+
+The AI system should analyze analytics and provide:
+
+* Performance summaries
+* Growth trends
+* Anomaly detection
+* Best traffic source
+* Best posting time
+* Best campaign
+* Best audience location
+* Campaign warnings
+* Underperforming-channel alerts
+* Returning-audience insights
+* Practical recommendations
+
+### Custom Domains
+
+Paid users should be able to connect domains such as:
+
+* `watch.company.com`
+* `go.brandname.com`
+* `video.organization.org`
+
+The platform should provide setup instructions for DNS configuration and SSL security.
+
+### A/B Testing
+
+Users should be able to create multiple versions of a campaign link and compare:
+
+* Destination videos
+* Link aliases
+* Campaign sources
+* Influencers
+* Headlines
+* Landing pages
+* Redirect destinations
+
+### Team Collaboration
+
+Business users should be able to invite team members and assign roles.
+
+Possible roles include:
+
+* Owner
+* Administrator
+* Marketing Manager
+* Analyst
+* Editor
+* Viewer
+
+### Reports
+
+Users should be able to generate:
+
+* Daily reports
+* Weekly reports
+* Monthly reports
+* Campaign reports
+* Client reports
+* Influencer reports
+* Affiliate reports
+* Location reports
+
+Reports should be downloadable as:
+
+* PDF
+* CSV
+* Excel
+
+### API Access
+
+Developers should be able to:
+
+* Create links
+* Update links
+* retrieve analytics
+* create campaigns
+* generate QR codes
+* manage domains
+* access reports
+
+API access should be protected using API keys, rate limits, and usage logs.
+
+---
+
+# 7. Pricing Page
+
+The pricing page should be simple, transparent, and easy to compare.
+
+## Free Plan
+
+Suitable for new users testing the platform.
+
+Possible features:
+
+* Up to 10 new links per month
+* Basic click analytics
+* Limited analytics history
+* Standard Kaldra short domain
+* Basic QR codes
+* One user
+* Kaldra branding
+
+## Pro Plan
+
+Suitable for creators, influencers, and individual marketers.
+
+Possible features:
+
+* Higher or unlimited link creation
+* Advanced analytics
+* AI insights
+* Custom link aliases
+* QR-code customization
+* Link expiration
+* Password protection
+* Campaign tracking
+* Data exports
+* Longer analytics history
+* One custom domain
+
+## Business Plan
+
+Suitable for companies, churches, agencies, and teams.
+
+Possible features:
+
+* Multiple users
+* Team roles and permissions
+* Multiple custom domains
+* Advanced campaign tracking
+* Influencer and affiliate tracking
+* A/B testing
+* Scheduled reports
+* Advanced AI insights
+* API access
+* White-label reports
+* Priority support
+
+## Enterprise Plan
+
+Suitable for large organizations.
+
+Possible features:
+
+* Custom number of users
+* Custom click volume
+* Single sign-on
+* Advanced security
+* Audit logs
+* Dedicated account manager
+* Custom branding
+* Custom integrations
+* Custom data retention
+* Service-level agreement
+* Dedicated support
+* Private deployment options
+* Custom pricing
+
+The system should also support monthly and annual billing.
+
+Annual plans may receive a discount.
+
+---
+
+# 8. Solutions Pages
+
+Separate solution pages should explain how Kaldra supports different customer groups.
+
+## Kaldra for Creators
+
+Focus on:
+
+* Audience growth
+* Platform comparison
+* Collaboration tracking
+* Best posting time
+* Returning fans
+* Media-kit reporting
+
+## Kaldra for Churches
+
+Focus on:
+
+* Sermon distribution
+* Online services
+* Conference campaigns
+* Branch tracking
+* QR-code tracking
+* WhatsApp outreach
+* Weekly ministry reports
+
+## Kaldra for Businesses
+
+Focus on:
+
+* Marketing campaigns
+* Product demonstrations
+* Customer education
+* Sales videos
+* Team reports
+* Customer locations
+
+## Kaldra for Agencies
+
+Focus on:
+
+* Multiple client workspaces
+* White-label reports
+* Team permissions
+* Client dashboards
+* Campaign comparison
+* Exportable reports
+
+## Kaldra for Educators
+
+Focus on:
+
+* Learning videos
+* Course promotions
+* Student access
+* Webinar links
+* Training campaigns
+* Regional performance
+
+## Kaldra for Events
+
+Focus on:
+
+* Event-promotion videos
+* QR-code scans
+* Sponsor links
+* Influencer links
+* Ticket campaigns
+* Location analysis
+
+---
+
+# 9. User Authentication
+
+The authentication system should support:
+
+* Email registration
+* Email verification
+* Secure login
+* Forgot-password flow
+* Password reset
+* Google sign-in
+* Apple sign-in
+* Microsoft sign-in
+* Optional two-factor authentication
+* Session management
+* Device-management history
+
+The system should prevent suspicious access and repeated failed login attempts.
+
+---
+
+# 10. User Dashboard
+
+The authenticated dashboard is the main working area of the platform.
+
+## 10.1 Dashboard Overview
+
+The dashboard homepage should display:
+
+* Total links
+* Total clicks
+* Unique visitors
+* Returning visitors
+* Active campaigns
+* Total QR scans
+* Click growth
+* Top country
+* Top city
+* Top traffic source
+* Top device
+* Best-performing link
+* Best-performing campaign
+* Recent activity
+* AI recommendations
+
+Users should be able to choose a date range:
+
+* Today
+* Yesterday
+* Last 7 days
+* Last 30 days
+* Last 90 days
+* This month
+* Previous month
+* Custom period
+
+## 10.2 Create Link Page
+
+The link-creation form should include:
+
+* Original video URL
+* Link title
+* Custom alias
+* Campaign
+* Tags
+* UTM source
+* UTM medium
+* UTM campaign
+* UTM term
+* UTM content
+* Expiration date
+* Password protection
+* Country restrictions
+* Device-based redirect
+* Custom domain
+* Notes
+
+The platform should validate the original URL and detect the video platform automatically.
+
+## 10.3 Links Page
+
+The links table should show:
+
+* Link title
+* Short URL
+* Original platform
+* Campaign
+* Total clicks
+* Unique clicks
+* Conversion rate
+* Date created
+* Status
+* Actions
+
+Actions should include:
+
+* Copy
+* Share
+* View analytics
+* Edit
+* Duplicate
+* Generate QR code
+* Pause
+* Archive
+* Delete
+
+## 10.4 Link Analytics Page
+
+Each link should have a dedicated analytics page.
+
+The page should include:
+
+* Total clicks
+* Unique visitors
+* Returning visitors
+* Click growth
+* Timeline chart
+* Hourly traffic chart
+* Day-of-week chart
+* Country map
+* State or region breakdown
+* City breakdown
+* Device breakdown
+* Browser breakdown
+* Operating-system breakdown
+* Language breakdown
+* Referral-source breakdown
+* UTM campaign breakdown
+* QR-code scans
+* Conversion performance
+* AI summary
+* AI recommendations
+
+## 10.5 Campaigns Page
+
+Users should be able to:
+
+* Create campaigns
+* Add links to campaigns
+* Assign influencers
+* Assign affiliates
+* Set budgets
+* define campaign dates
+* add objectives
+* add notes
+* compare campaigns
+* generate campaign reports
+
+## 10.6 QR Codes Page
+
+The QR-code section should allow users to:
+
+* View all QR codes
+* Create campaign-specific QR codes
+* Customize QR-code design
+* Download QR codes
+* Track scans
+* Compare QR-code performance
+* Deactivate QR codes
+
+## 10.7 AI Insights Page
+
+The AI insights section should provide:
+
+### Performance Summary
+
+A clear summary of recent account activity.
+
+### Best-Performing Channel
+
+The channel producing the highest traffic or conversion.
+
+### Best Posting Time
+
+The time and day most likely to generate strong engagement.
+
+### Audience Location
+
+The locations producing the most traffic.
+
+### Campaign Warnings
+
+Warnings about sudden drops, unusual traffic, or underperforming campaigns.
+
+### Growth Opportunities
+
+Suggestions for improving future results.
+
+### Weekly Recommendation
+
+A short action plan for the next seven days.
+
+Example:
+
+“Your WhatsApp links generated the highest number of returning visitors this week. Consider sharing your next campaign through WhatsApp between 7:30 PM and 9:00 PM.”
+
+## 10.8 Reports Page
+
+Users should be able to:
+
+* Generate a report
+* Select date range
+* Select links
+* Select campaigns
+* Select metrics
+* Add a company logo
+* Add client information
+* Add comments
+* Export reports
+* Schedule reports by email
+
+## 10.9 Team Page
+
+Users should be able to:
+
+* Invite team members
+* Assign roles
+* Remove members
+* change permissions
+* view recent actions
+* transfer ownership
+* manage workspace access
+
+## 10.10 Billing Page
+
+The billing section should include:
+
+* Current plan
+* Monthly usage
+* Link limit
+* Click limit
+* AI usage
+* Team-member limit
+* Billing history
+* Payment method
+* Upgrade button
+* Downgrade option
+* Cancel-subscription option
+* Downloadable invoices
+
+## 10.11 Settings Page
+
+Settings should include:
+
+* Profile
+* Company information
+* Workspace name
+* Logo
+* Time zone
+* Currency
+* Language
+* Notification preferences
+* Security settings
+* Two-factor authentication
+* Connected domains
+* API keys
+* Webhooks
+* Data-export settings
+* Data-deletion request
+
+---
+
+# 11. Admin Dashboard
+
+Kaldra should have a separate internal admin dashboard.
+
+The admin dashboard should allow authorized staff to manage:
+
+* Users
+* Organizations
+* Subscriptions
+* Payments
+* Links
+* Domains
+* Click activity
+* Reported links
+* Suspicious activity
+* Support tickets
+* API usage
+* Platform limits
+* AI usage
+* Email templates
+* Pricing plans
+* Discount codes
+* Announcements
+* System logs
+
+The admin team should be able to:
+
+* Suspend accounts
+* Ban malicious links
+* investigate abuse
+* adjust subscription limits
+* issue refunds
+* manage invoices
+* view platform revenue
+* monitor server performance
+* respond to customer-support requests
+
+---
+
+# 12. Analytics and Tracking Requirements
+
+Kaldra should only collect information that is lawful, necessary, disclosed, and permitted.
+
+Possible analytics may include:
+
+* Timestamp
+* Referring source
+* Device category
+* Browser
+* Operating system
+* Preferred language
+* Approximate location
+* UTM parameters
+* Campaign identifier
+* Link identifier
+* QR-code identifier
+* New or returning visitor status
+* Redirect result
+* Conversion event, where configured
+
+The platform should avoid promising access to information that cannot reliably be detected.
+
+For example, traffic from some mobile applications may appear as direct or unknown traffic if the application does not send referral information.
+
+Location data based on IP addresses should be described as approximate.
+
+Kaldra should not claim to know a visitor's exact home address or precise physical location unless the visitor has explicitly granted permission for a specific feature.
+
+---
+
+# 13. Conversion Tracking
+
+Users should be able to define conversion goals.
+
+Possible conversion events include:
+
+* Link click
+* Landing-page visit
+* Signup
+* Purchase
+* Download
+* Registration
+* Form submission
+* Button click
+* Donation
+* Event booking
+
+Since Kaldra redirects users to third-party platforms, advanced conversion tracking may require:
+
+* A Kaldra tracking pixel
+* API integration
+* Webhook integration
+* User-owned landing pages
+* Server-side event tracking
+* Manual conversion import
+
+The website should explain clearly that Kaldra can always measure the redirect click, but actions performed inside third-party platforms may not be available unless those platforms provide an integration.
+
+---
+
+# 14. AI Insights System
+
+The AI-insights feature should analyze account data and convert it into understandable recommendations.
+
+The AI should be able to produce:
+
+* Daily summaries
+* Weekly summaries
+* Monthly summaries
+* Campaign comparisons
+* Traffic-source comparisons
+* Location analysis
+* Device analysis
+* Trend analysis
+* Anomaly alerts
+* Peak-period recommendations
+* Performance forecasts
+
+The system should avoid presenting uncertain predictions as guaranteed facts.
+
+Predictions should include confidence levels where appropriate.
+
+Example:
+
+“Based on your last eight weeks of activity, Tuesday between 7 PM and 9 PM is likely to produce stronger traffic. Confidence level: 78%.”
+
+AI recommendations should be based on actual user data and should explain the reason behind each recommendation.
+
+---
+
+# 15. Notifications
+
+Users should receive optional notifications for:
+
+* Sudden traffic increases
+* Sudden traffic drops
+* Campaign milestones
+* Link expiration
+* High-performing campaigns
+* Suspicious activity
+* Custom-domain issues
+* Subscription limits
+* Failed payments
+* Weekly reports
+* Monthly reports
+* AI recommendations
+
+Notifications may be delivered through:
+
+* In-app notification
+* Email
+* Push notification
+* WhatsApp integration, where supported
+* Slack integration
+* Microsoft Teams integration
+
+---
+
+# 16. Security Requirements
+
+The platform should include strong security measures.
+
+Requirements should include:
+
+* HTTPS encryption
+* Secure password hashing
+* Role-based access control
+* Two-factor authentication
+* API-key security
+* Rate limiting
+* Bot filtering
+* Malicious-link detection
+* Spam prevention
+* Abuse reporting
+* Audit logs
+* Database backups
+* Session expiration
+* Login alerts
+* Data encryption where appropriate
+* Protection against common web vulnerabilities
+
+The system should scan or validate destination URLs to reduce the risk of phishing, malware, fraud, or prohibited content.
+
+---
+
+# 17. Privacy and Compliance
+
+The website should include:
+
+* Privacy Policy
+* Terms of Service
+* Cookie Policy
+* Acceptable Use Policy
+* Data Processing Agreement
+* Refund Policy
+* Security page
+* Abuse-reporting page
+
+The platform should be designed with privacy principles such as:
+
+* Data minimization
+* Clear user consent
+* Transparent analytics collection
+* Limited data retention
+* Account-data export
+* Account deletion
+* IP anonymization where appropriate
+* Cookie controls
+* Regional compliance settings
+
+The final legal documents should be reviewed by a qualified legal professional.
+
+---
+
+# 18. Website Design Direction
+
+The design should feel:
+
+* Modern
+* Intelligent
+* Professional
+* Premium
+* Trustworthy
+* Fast
+* Clean
+* Technology-focused
+* Easy to understand
+
+## Suggested Visual Style
+
+Use a polished SaaS design with:
+
+* Large clear headings
+* Rounded dashboard cards
+* Clean charts
+* Spacious layouts
+* Subtle gradients
+* Modern icons
+* Minimal visual clutter
+* Strong call-to-action buttons
+* Light and dark dashboard options
+* Responsive mobile layout
+
+## Suggested Color Direction
+
+Possible color direction:
+
+* Deep navy or dark charcoal for trust
+* Bright blue or electric purple for technology
+* Green accents for growth and positive results
+* Neutral white and light gray backgrounds
+
+The final color palette should be based on the approved Kaldra brand identity.
+
+---
+
+# 19. Responsive Design
+
+The platform must work properly on:
+
+* Desktop computers
+* Laptops
+* Tablets
+* Android phones
+* iPhones
+
+The mobile dashboard should allow users to:
+
+* Create links
+* Copy links
+* View key analytics
+* View AI recommendations
+* Download or share QR codes
+* Receive notifications
+
+Complex charts should be simplified for smaller screens.
+
+---
+
+# 20. Recommended Navigation
+
+## Public Website Navigation
+
+* Home
+* Features
+* Solutions
+* Pricing
+* Resources
+* Developers
+* Login
+* Sign Up
+
+## Dashboard Sidebar
+
+* Overview
+* Links
+* Create Link
+* Campaigns
+* Analytics
+* QR Codes
+* AI Insights
+* Reports
+* Team
+* Integrations
+* Billing
+* Settings
+
+---
+
+# 21. Integrations
+
+Future integrations may include:
+
+* Google Analytics
+* Meta Ads
+* Google Ads
+* TikTok Ads
+* YouTube
+* Mailchimp
+* HubSpot
+* Salesforce
+* Zapier
+* Slack
+* Microsoft Teams
+* WordPress
+* Shopify
+* Stripe
+* Paystack
+* Flutterwave
+* Webhooks
+* REST API
+
+Each integration should clearly state what information it can access.
+
+---
+
+# 22. Payment System
+
+The platform should support subscription payments.
+
+Possible payment providers include:
+
+* Stripe
+* Paystack
+* Flutterwave
+
+The payment system should support:
+
+* Monthly subscriptions
+* Annual subscriptions
+* Plan upgrades
+* Plan downgrades
+* Trial periods
+* Discount codes
+* Failed-payment retries
+* Automatic invoicing
+* Payment receipts
+* Tax calculations where required
+
+---
+
+# 23. Minimum Viable Product
+
+The first version of Kaldra should focus on the most important features.
+
+## MVP Features
+
+* User registration and login
+* Paste video URL
+* Generate short link
+* Custom alias
+* Fast redirect
+* Total clicks
+* Unique clicks
+* Returning visitors
+* Device analytics
+* Browser analytics
+* Operating-system analytics
+* Country and city estimates
+* Traffic-source tracking
+* Date and time trends
+* Campaign creation
+* UTM parameters
+* Basic QR-code generation
+* Link management
+* Basic AI summaries
+* Free and paid subscription plans
+* Admin dashboard
+* Basic reports
+* Mobile-responsive design
+
+Features such as advanced A/B testing, enterprise SSO, complex automation, deep integrations, and predictive analytics can be added after the MVP is stable.
+
+---
+
+# 24. Future Development Roadmap
+
+## Phase One: Core Platform
+
+* Account creation
+* Link generation
+* Redirect tracking
+* Basic analytics
+* QR codes
+* Campaigns
+* Subscription billing
+
+## Phase Two: Advanced Analytics
+
+* Detailed traffic sources
+* Geographic analysis
+* Link comparison
+* Campaign comparison
+* Scheduled reports
+* Team accounts
+* Custom domains
+
+## Phase Three: AI Intelligence
+
+* AI summaries
+* Posting-time recommendations
+* Anomaly detection
+* Performance forecasts
+* Channel recommendations
+* Campaign optimization
+
+## Phase Four: Business and Enterprise
+
+* API access
+* Webhooks
+* White-label accounts
+* SSO
+* Audit logs
+* Advanced permissions
+* Client workspaces
+* Enterprise security
+
+## Phase Five: Ecosystem Expansion
+
+* Mobile application
+* Browser extension
+* WordPress plugin
+* Shopify application
+* Marketing-platform integrations
+* Ad-platform integrations
+* Automated campaign creation
+
+---
+
+# 25. Key Performance Indicators
+
+The platform should measure its own business performance using:
+
+* New registrations
+* Activated users
+* Links created
+* Monthly active users
+* Daily active users
+* Total clicks tracked
+* Free-to-paid conversion rate
+* Customer acquisition cost
+* Monthly recurring revenue
+* Annual recurring revenue
+* Churn rate
+* Average revenue per user
+* Link-creation frequency
+* Report-generation frequency
+* AI-insight usage
+* Custom-domain adoption
+* Team-account adoption
+
+---
+
+# 26. Product Differentiation
+
+Kaldra should not position itself as only another URL shortener.
+
+Its main differentiation should be:
+
+* Video-focused link intelligence
+* Clear campaign attribution
+* AI-powered recommendations
+* Creator and business use cases
+* Influencer-performance tracking
+* QR-code intelligence
+* Simple reports
+* Support for teams and agencies
+* Easy-to-understand analytics
+* Actionable marketing guidance
+
+The key difference is:
+
+**Bitly helps users create and track short links.**
+
+**Google Analytics helps website owners understand activity on their own websites.**
+
+**Kaldra helps users understand how shared video links perform across social platforms, messaging applications, campaigns, influencers, QR codes, and audiences.**
+
+---
+
+# 27. Final Product Vision
+
+Kaldra should become a complete video-distribution intelligence platform.
+
+A user should be able to paste any supported video link, generate a branded tracking link, share it anywhere, understand who clicked, identify where the traffic came from, compare campaign performance, generate reports, and receive clear AI-powered guidance.
+
+The platform should make advanced analytics understandable even to users who are not marketing experts.
+
+The ultimate vision is to help every creator, organization, church, marketer, educator, and business make better decisions whenever they share video content online.
+
+## Final Brand Statement
+
+**Kaldra turns ordinary video links into intelligent marketing assets.**

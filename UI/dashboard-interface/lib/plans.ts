@@ -1,0 +1,46 @@
+export const PUBLIC_PLANS = [
+  {
+    id: 'free',
+    name: 'Free',
+    description: 'For getting started with trackable video links',
+    price: 0,
+    currency: 'USD',
+    billingCycle: 'monthly' as const,
+    features: [
+      '25 links per month',
+      'Basic click analytics',
+      '1 team seat',
+      'QR code generation',
+    ],
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    description: 'For creators and marketers who need deeper insight',
+    price: 19,
+    currency: 'USD',
+    billingCycle: 'monthly' as const,
+    features: [
+      'Unlimited links',
+      'Campaigns + UTM tracking',
+      'AI insights',
+      '5 team seats',
+      'Exportable reports',
+    ],
+  },
+  {
+    id: 'business',
+    name: 'Business',
+    description: 'For teams and agencies managing multiple campaigns',
+    price: 49,
+    currency: 'USD',
+    billingCycle: 'monthly' as const,
+    features: [
+      'Everything in Pro',
+      'Priority support',
+      'Custom branding',
+      '25 team seats',
+      'Advanced permissions',
+    ],
+  },
+]

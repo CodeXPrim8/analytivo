@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  workspaceName String    @default("My Workspace")
+  plan          String    @default("free")
+  sessions      Session[]
+  accounts      Account[]
+  campaigns     Campaign[]
+  links         Link[]
+  qrCodes       QRCode[]
+  reports       Report[]
+  teamMembers   TeamMember[]
+  insights      Insight[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  status      String   @default("active")
+  startDate   DateTime @default(now())
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  links       Link[]
+
+  @@index([userId])
+}
+
+model Link {
+  id          String   @id @default(cuid())
+  title       String
+  alias       String   @unique
+  originalUrl String
+  source      String   @default("direct")
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  expiresAt   DateTime?
+  password    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaignId  String?
+  campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  clicks      Click[]
+  qrCodes     QRCode[]
+
+  @@index([userId])
+  @@index([campaignId])
+}
+
+model Click {
+  id          String   @id @default(cuid())
+  linkId      String
+  link        Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  visitorId   String
+  referrer    String?
+  source      String?
+  device      String?
+  browser     String?
+  os          String?
+  country     String?
+  city        String?
+  language    String?
+  isReturning Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([linkId])
+  @@index([visitorId])
+  @@index([createdAt])
+}
+
+model QRCode {
+  id         String   @id @default(cuid())
+  linkId     String
+  link       Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  frameColor String   @default("#7c3aed")
+  shape      String   @default("square")
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([linkId])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        String   @default("performance")
+  schedule    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  role      String   @default("viewer")
+  avatar    String?
+  joinedAt  DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, email])
+  @@index([userId])
+}
+
+model Insight {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  confidence  Float    @default(0.7)
+  actionItems String
+  createdAt   DateTime @default(now())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
