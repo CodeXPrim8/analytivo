@@ -110,18 +110,6 @@ export default function LoginPage() {
           Sign up
         </Link>
       </p>
-
-      <div className="mt-6 pt-6 border-t border-border">
-        <p className="text-xs text-muted-foreground text-center mb-4">Or continue with</p>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" className="flex-1 text-sm">
-            Google
-          </Button>
-          <Button type="button" variant="outline" className="flex-1 text-sm">
-            Apple
-          </Button>
-        </div>
-      </div>
     </motion.div>
   )
 }
