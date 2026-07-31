@@ -24,7 +24,8 @@ model User {
   links         Link[]
   qrCodes       QRCode[]
   reports       Report[]
-  teamMembers   TeamMember[]
+  teamMembers   TeamMember[]   @relation("WorkspaceMembers")
+  memberships   TeamMember[]   @relation("MemberAccount")
   insights      Insight[]
   notifications Notification[]
 }
@@ -176,18 +177,27 @@ model Report {
   @@index([userId])
 }
 
+/// A person invited to the workspace owned by `userId`.
+/// Becomes usable access only once `status` is "active" and `memberUserId` is linked.
 model TeamMember {
-  id       String   @id @default(cuid())
-  name     String
-  email    String
-  role     String   @default("viewer")
-  avatar   String?
-  joinedAt DateTime @default(now())
-  userId   String
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  name         String
+  email        String
+  role         String    @default("viewer")
+  avatar       String?
+  status       String    @default("pending")
+  inviteToken  String?   @unique
+  invitedAt    DateTime  @default(now())
+  acceptedAt   DateTime?
+  joinedAt     DateTime  @default(now())
+  userId       String
+  user         User      @relation("WorkspaceMembers", fields: [userId], references: [id], onDelete: Cascade)
+  memberUserId String?
+  memberUser   User?     @relation("MemberAccount", fields: [memberUserId], references: [id], onDelete: SetNull)
 
   @@unique([userId, email])
   @@index([userId])
+  @@index([memberUserId, status])
 }
 
 model Insight {

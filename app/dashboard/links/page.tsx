@@ -1,18 +1,18 @@
-import { requireUser } from '@/lib/session'
+import { requireWorkspace, roleAtLeast } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { serializeLink } from '@/lib/analytics'
 import { LinksManager } from '@/components/LinksManager'
 
 export default async function LinksPage() {
-  const user = await requireUser()
+  const ctx = await requireWorkspace()
   const rows = await prisma.link.findMany({
-    where: { userId: user.id },
+    where: { userId: ctx.ownerId },
     include: { _count: { select: { clicks: true } } },
     orderBy: { createdAt: 'desc' },
   })
 
   const campaigns = await prisma.campaign.findMany({
-    where: { userId: user.id },
+    where: { userId: ctx.ownerId },
     orderBy: { name: 'asc' },
     select: { id: true, name: true },
   })
@@ -27,5 +27,11 @@ export default async function LinksPage() {
     }),
   )
 
-  return <LinksManager initialLinks={links} campaigns={campaigns} />
+  return (
+    <LinksManager
+      initialLinks={links}
+      campaigns={campaigns}
+      canEdit={roleAtLeast(ctx.role, 'editor')}
+    />
+  )
 }

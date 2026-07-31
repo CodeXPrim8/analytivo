@@ -1,11 +1,11 @@
-import { requireUser } from '@/lib/session'
+import { requireWorkspace, roleAtLeast } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { CampaignsManager } from '@/components/CampaignsManager'
 
 export default async function CampaignsPage() {
-  const user = await requireUser()
+  const ctx = await requireWorkspace()
   const campaigns = await prisma.campaign.findMany({
-    where: { userId: user.id },
+    where: { userId: ctx.ownerId },
     include: {
       links: { include: { _count: { select: { clicks: true } } } },
       _count: { select: { links: true } },
@@ -40,5 +40,10 @@ export default async function CampaignsPage() {
     }),
   )
 
-  return <CampaignsManager initialCampaigns={serialized} />
+  return (
+    <CampaignsManager
+      initialCampaigns={serialized}
+      canEdit={roleAtLeast(ctx.role, 'editor')}
+    />
+  )
 }

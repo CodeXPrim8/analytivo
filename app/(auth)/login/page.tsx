@@ -13,13 +13,20 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [remember, setRemember] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [destination, setDestination] = useState('/dashboard')
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
+
+    const invite = params.get('invite')
+    const next = params.get('next')
+    if (invite) setDestination(`/invite/${invite}`)
+    else if (next?.startsWith('/')) setDestination(next)
+
     if (params.get('error') === 'session-expired') {
       void signOut().finally(() => {
         setError('Your previous session is no longer valid. Please sign in again.')
-        window.history.replaceState({}, '', '/login')
+        window.history.replaceState({}, '', invite ? `/login?invite=${invite}` : '/login')
       })
     }
   }, [])
@@ -36,7 +43,7 @@ export default function LoginPage() {
     try {
       await login(formData.email, formData.password)
       // Full navigation so the new session cookie is always sent to the server.
-      window.location.assign('/dashboard')
+      window.location.assign(destination)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.')
       setSubmitting(false)
@@ -106,7 +113,10 @@ export default function LoginPage() {
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{' '}
-        <Link href="/signup" className="text-primary hover:underline font-medium">
+        <Link
+          href={destination.startsWith('/invite/') ? `/signup?invite=${destination.slice(8)}` : '/signup'}
+          className="text-primary hover:underline font-medium"
+        >
           Sign up
         </Link>
       </p>

@@ -15,9 +15,18 @@ export function generateAlias(custom?: string) {
   return nanoid()
 }
 
+export function appBaseUrl(origin?: string) {
+  const base =
+    origin ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.BETTER_AUTH_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '') ||
+    'http://localhost:3000'
+  return base.replace(/\/$/, '')
+}
+
 export function shortUrlFor(alias: string, origin?: string) {
-  const base = origin || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  return `${base.replace(/\/$/, '')}/l/${alias}`
+  return `${appBaseUrl(origin)}/l/${alias}`
 }
 
 export function isValidVideoUrl(url: string) {

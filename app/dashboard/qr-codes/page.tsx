@@ -1,13 +1,13 @@
-import { requireUser } from '@/lib/session'
+import { requireWorkspace, roleAtLeast } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { shortUrlFor } from '@/lib/links'
 import { QRCodesManager } from '@/components/QRCodesManager'
 
 export default async function QRCodesPage() {
-  const user = await requireUser()
+  const ctx = await requireWorkspace()
   const [qrCodes, links] = await Promise.all([
     prisma.qRCode.findMany({
-      where: { userId: user.id },
+      where: { userId: ctx.ownerId },
       include: {
         link: {
           include: { _count: { select: { clicks: true } } },
@@ -16,7 +16,7 @@ export default async function QRCodesPage() {
       orderBy: { createdAt: 'desc' },
     }),
     prisma.link.findMany({
-      where: { userId: user.id },
+      where: { userId: ctx.ownerId },
       orderBy: { createdAt: 'desc' },
       select: { id: true, title: true, alias: true },
     }),
@@ -24,6 +24,7 @@ export default async function QRCodesPage() {
 
   return (
     <QRCodesManager
+      canEdit={roleAtLeast(ctx.role, 'editor')}
       initialQRCodes={qrCodes.map((qr) => ({
         id: qr.id,
         linkId: qr.linkId,

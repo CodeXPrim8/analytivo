@@ -1,16 +1,17 @@
-import { requireUser } from '@/lib/session'
+import { requireWorkspace, roleAtLeast } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { ReportsManager } from '@/components/ReportsManager'
 
 export default async function ReportsPage() {
-  const user = await requireUser()
+  const ctx = await requireWorkspace()
   const reports = await prisma.report.findMany({
-    where: { userId: user.id },
+    where: { userId: ctx.ownerId },
     orderBy: { createdAt: 'desc' },
   })
 
   return (
     <ReportsManager
+      canEdit={roleAtLeast(ctx.role, 'editor')}
       initialReports={reports.map((r) => ({
         id: r.id,
         name: r.name,

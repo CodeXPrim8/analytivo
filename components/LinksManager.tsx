@@ -13,9 +13,11 @@ type CampaignOption = { id: string; name: string }
 export function LinksManager({
   initialLinks,
   campaigns,
+  canEdit = true,
 }: {
   initialLinks: Link[]
   campaigns: CampaignOption[]
+  canEdit?: boolean
 }) {
   const router = useRouter()
   const [links, setLinks] = useState(initialLinks)
@@ -76,13 +78,15 @@ export function LinksManager({
           <h1 className="text-4xl font-bold mb-2">Links</h1>
           <p className="text-muted-foreground">Manage and track {links.length} video links</p>
         </div>
-        <Button className="gap-2 font-semibold" onClick={() => setOpen(true)}>
-          <Plus size={18} />
-          Create Link
-        </Button>
+        {canEdit && (
+          <Button className="gap-2 font-semibold" onClick={() => setOpen(true)}>
+            <Plus size={18} />
+            Create Link
+          </Button>
+        )}
       </div>
 
-      {open && (
+      {open && canEdit && (
         <div className="mb-6 rounded-xl border border-border bg-card/50 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">New trackable link</h2>
@@ -175,7 +179,9 @@ export function LinksManager({
               {links.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-10 px-6 text-center text-muted-foreground">
-                    No links yet. Create one to start tracking clicks.
+                    {canEdit
+                      ? 'No links yet. Create one to start tracking clicks.'
+                      : 'No links in this workspace yet.'}
                   </td>
                 </tr>
               ) : (
@@ -208,13 +214,15 @@ export function LinksManager({
                             <Copy size={16} />
                           )}
                         </button>
-                        <button
-                          onClick={() => handleDelete(link.id)}
-                          className="p-2 hover:bg-muted rounded-lg"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => handleDelete(link.id)}
+                            className="p-2 hover:bg-muted rounded-lg"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

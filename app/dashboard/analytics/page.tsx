@@ -2,7 +2,7 @@ import { BarChart3, Users, TrendingUp, Percent } from 'lucide-react'
 import { AnalyticsChart } from '@/components/AnalyticsChart'
 import { StatBarList } from '@/components/StatBarList'
 import { KPICard } from '@/components/KPICard'
-import { requireUser } from '@/lib/session'
+import { requireWorkspace } from '@/lib/workspace'
 import {
   getClickTrends,
   getDeviceBreakdown,
@@ -13,13 +13,13 @@ import {
 import { formatNumber } from '@/lib/utils-helpers'
 
 export default async function AnalyticsPage() {
-  const user = await requireUser()
+  const ctx = await requireWorkspace()
   const [trends, sources, devices, stats, period] = await Promise.all([
-    getClickTrends(user.id, 30),
-    getTrafficSources(user.id),
-    getDeviceBreakdown(user.id),
-    getLinkStats(user.id),
-    getPeriodComparison(user.id, 7),
+    getClickTrends(ctx.ownerId, 30),
+    getTrafficSources(ctx.ownerId),
+    getDeviceBreakdown(ctx.ownerId),
+    getLinkStats(ctx.ownerId),
+    getPeriodComparison(ctx.ownerId, 7),
   ])
 
   const returnRate =

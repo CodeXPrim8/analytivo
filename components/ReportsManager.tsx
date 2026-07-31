@@ -9,7 +9,13 @@ import { formatRelativeTime } from '@/lib/utils-helpers'
 
 type ReportItem = { id: string; name: string; type: string; createdAt: Date }
 
-export function ReportsManager({ initialReports }: { initialReports: ReportItem[] }) {
+export function ReportsManager({
+  initialReports,
+  canEdit = true,
+}: {
+  initialReports: ReportItem[]
+  canEdit?: boolean
+}) {
   const router = useRouter()
   const [reports, setReports] = useState(initialReports)
   const [name, setName] = useState('')
@@ -51,29 +57,31 @@ export function ReportsManager({ initialReports }: { initialReports: ReportItem[
         <p className="text-muted-foreground">Save named snapshots of your reporting focus</p>
       </div>
 
-      <form onSubmit={create} className="mb-6 flex flex-col md:flex-row gap-3">
-        <input
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Report name"
-          className="flex-1 px-3 py-2 rounded-lg border border-border bg-background"
-        />
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-          className="px-3 py-2 rounded-lg border border-border bg-background"
-        >
-          <option value="performance">Performance</option>
-          <option value="audience">Audience</option>
-          <option value="conversion">Conversion</option>
-          <option value="custom">Custom</option>
-        </select>
-        <Button type="submit" disabled={pending} className="gap-2">
-          <Plus size={16} />
-          Generate Report
-        </Button>
-      </form>
+      {canEdit && (
+        <form onSubmit={create} className="mb-6 flex flex-col md:flex-row gap-3">
+          <input
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Report name"
+            className="flex-1 px-3 py-2 rounded-lg border border-border bg-background"
+          />
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            className="px-3 py-2 rounded-lg border border-border bg-background"
+          >
+            <option value="performance">Performance</option>
+            <option value="audience">Audience</option>
+            <option value="conversion">Conversion</option>
+            <option value="custom">Custom</option>
+          </select>
+          <Button type="submit" disabled={pending} className="gap-2">
+            <Plus size={16} />
+            Generate Report
+          </Button>
+        </form>
+      )}
 
       <div className="rounded-xl border border-border bg-card/50 overflow-hidden">
         <table className="w-full text-sm">
@@ -101,9 +109,14 @@ export function ReportsManager({ initialReports }: { initialReports: ReportItem[
                     {formatRelativeTime(new Date(report.createdAt))}
                   </td>
                   <td className="py-4 px-6">
-                    <button onClick={() => remove(report.id)} className="p-2 hover:bg-muted rounded-lg">
-                      <Trash2 size={16} />
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => remove(report.id)}
+                        className="p-2 hover:bg-muted rounded-lg"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))

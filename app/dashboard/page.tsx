@@ -3,25 +3,31 @@ import { BarChart3, Users, TrendingUp, Percent } from 'lucide-react'
 import { KPICard } from '@/components/KPICard'
 import { AnalyticsChart } from '@/components/AnalyticsChart'
 import { StatBarList } from '@/components/StatBarList'
-import { requireUser } from '@/lib/session'
+import { requireWorkspace, roleAtLeast } from '@/lib/workspace'
 import { getDashboardOverview } from '@/lib/analytics'
 import { formatNumber, formatRelativeTime } from '@/lib/utils-helpers'
 import { Button } from '@/components/ui/button'
 
 export default async function DashboardPage() {
-  const user = await requireUser()
-  const overview = await getDashboardOverview(user.id)
+  const ctx = await requireWorkspace()
+  const overview = await getDashboardOverview(ctx.ownerId)
 
   return (
     <div className="min-h-screen">
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
-          <p className="text-muted-foreground">Track your performance at a glance</p>
+          <p className="text-muted-foreground">
+            {ctx.isOwner
+              ? 'Track your performance at a glance'
+              : `Viewing ${ctx.workspaceName} as ${ctx.role}`}
+          </p>
         </div>
-        <Button asChild className="font-semibold">
-          <Link href="/dashboard/links">Create Link</Link>
-        </Button>
+        {roleAtLeast(ctx.role, 'editor') && (
+          <Button asChild className="font-semibold">
+            <Link href="/dashboard/links">Create Link</Link>
+          </Button>
+        )}
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -94,13 +100,19 @@ export default async function DashboardPage() {
       <div className="rounded-xl border border-border bg-card/50 p-6">
         <h2 className="text-lg font-semibold mb-4">Recent Links</h2>
         {overview.recentLinks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No links yet.{' '}
-            <Link href="/dashboard/links" className="text-primary hover:underline">
-              Create your first link
-            </Link>{' '}
-            to start collecting clicks.
-          </p>
+          roleAtLeast(ctx.role, 'editor') ? (
+            <p className="text-sm text-muted-foreground">
+              No links yet.{' '}
+              <Link href="/dashboard/links" className="text-primary hover:underline">
+                Create your first link
+              </Link>{' '}
+              to start collecting clicks.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No links in this workspace yet.
+            </p>
+          )
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

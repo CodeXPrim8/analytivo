@@ -1,17 +1,17 @@
-import { requireUser } from '@/lib/session'
+import { requireWorkspace } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { generateInsightsForUser, insightsProviderLabel } from '@/lib/insights'
 import { AIInsightsPanel } from '@/components/AIInsightsPanel'
 
 export default async function AIInsightsPage() {
-  const user = await requireUser()
+  const ctx = await requireWorkspace()
   let insights = await prisma.insight.findMany({
-    where: { userId: user.id },
+    where: { userId: ctx.ownerId },
     orderBy: { createdAt: 'desc' },
   })
 
   if (insights.length === 0) {
-    insights = await generateInsightsForUser(user.id)
+    insights = await generateInsightsForUser(ctx.ownerId, ctx.user.id)
   }
 
   return (

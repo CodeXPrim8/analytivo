@@ -1,24 +1,26 @@
-import { requireUser } from '@/lib/session'
+import { requireWorkspace } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
+import { listTeamMembers } from '@/lib/team'
+import { emailEnabled } from '@/lib/email'
 import { TeamManager } from '@/components/TeamManager'
 
 export default async function TeamPage() {
-  const user = await requireUser()
-  const members = await prisma.teamMember.findMany({
-    where: { userId: user.id },
-    orderBy: { joinedAt: 'desc' },
-  })
+  const ctx = await requireWorkspace()
+  const [members, owner] = await Promise.all([
+    listTeamMembers(ctx.ownerId, ctx.user.id),
+    prisma.user.findUniqueOrThrow({
+      where: { id: ctx.ownerId },
+      select: { id: true, name: true, email: true, image: true },
+    }),
+  ])
 
   return (
     <TeamManager
-      initialMembers={members.map((m) => ({
-        id: m.id,
-        name: m.name,
-        email: m.email,
-        role: m.role as 'admin' | 'editor' | 'viewer',
-        avatar: m.avatar || undefined,
-        joinedAt: m.joinedAt,
-      }))}
+      initialMembers={members}
+      owner={owner}
+      workspaceName={ctx.workspaceName}
+      role={ctx.role}
+      emailConfigured={emailEnabled()}
     />
   )
 }

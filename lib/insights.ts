@@ -359,7 +359,11 @@ function answerFromRules(ctx: InsightContext, question: string): string {
   return fallback?.description || 'Share more links to unlock deeper answers.'
 }
 
-async function persistInsights(userId: string, insights: GeneratedInsight[]) {
+async function persistInsights(
+  userId: string,
+  insights: GeneratedInsight[],
+  notifyUserId: string,
+) {
   await prisma.insight.deleteMany({ where: { userId } })
   await prisma.insight.createMany({
     data: insights.map((insight) => ({
@@ -373,7 +377,7 @@ async function persistInsights(userId: string, insights: GeneratedInsight[]) {
 
   // Push a concise alert so the bell lights up with the latest insight.
   if (insights.length > 0) {
-    await createNotifications(userId, [
+    await createNotifications(notifyUserId, [
       {
         title: 'New AI insights ready',
         body: insights
@@ -398,7 +402,11 @@ async function persistInsights(userId: string, insights: GeneratedInsight[]) {
   })
 }
 
-export async function generateInsightsForUser(userId: string) {
+/**
+ * Insights belong to the workspace (`userId` = workspace owner), while the
+ * notification goes to whoever asked for them.
+ */
+export async function generateInsightsForUser(userId: string, notifyUserId?: string) {
   const ctx = await buildInsightContext(userId)
 
   let insights: GeneratedInsight[]
@@ -412,7 +420,7 @@ export async function generateInsightsForUser(userId: string) {
     insights = ruleBasedInsights(ctx)
   }
 
-  return persistInsights(userId, insights)
+  return persistInsights(userId, insights, notifyUserId || userId)
 }
 
 export async function answerInsightQuestion(userId: string, question: string) {

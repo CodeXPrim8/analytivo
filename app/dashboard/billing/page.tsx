@@ -1,4 +1,5 @@
-import { requireUser } from '@/lib/session'
+import { redirect } from 'next/navigation'
+import { requireWorkspace } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { BillingPanel } from '@/components/BillingPanel'
 
@@ -24,11 +25,14 @@ const PLANS = [
 ] as const
 
 export default async function BillingPage() {
-  const user = await requireUser()
-  const dbUser = await prisma.user.findUniqueOrThrow({ where: { id: user.id } })
+  const ctx = await requireWorkspace()
+  // Billing belongs to the account that owns the workspace.
+  if (!ctx.isOwner) redirect('/dashboard')
+
+  const dbUser = await prisma.user.findUniqueOrThrow({ where: { id: ctx.ownerId } })
   const [linksCreated, campaignsCreated] = await Promise.all([
-    prisma.link.count({ where: { userId: user.id } }),
-    prisma.campaign.count({ where: { userId: user.id } }),
+    prisma.link.count({ where: { userId: ctx.ownerId } }),
+    prisma.campaign.count({ where: { userId: ctx.ownerId } }),
   ])
 
   return (

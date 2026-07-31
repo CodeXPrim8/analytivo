@@ -20,9 +20,11 @@ type LinkOption = { id: string; title: string; shortUrl: string }
 export function QRCodesManager({
   initialQRCodes,
   links,
+  canEdit = true,
 }: {
   initialQRCodes: QRItem[]
   links: LinkOption[]
+  canEdit?: boolean
 }) {
   const router = useRouter()
   const [items, setItems] = useState(initialQRCodes)
@@ -83,27 +85,29 @@ export function QRCodesManager({
         <p className="text-muted-foreground">Generate printable codes for offline campaigns</p>
       </div>
 
-      <div className="mb-6 flex flex-col md:flex-row gap-3">
-        <select
-          value={linkId}
-          onChange={(e) => setLinkId(e.target.value)}
-          className="flex-1 px-3 py-2 rounded-lg border border-border bg-background"
-        >
-          {links.length === 0 ? (
-            <option value="">Create a link first</option>
-          ) : (
-            links.map((link) => (
-              <option key={link.id} value={link.id}>
-                {link.title}
-              </option>
-            ))
-          )}
-        </select>
-        <Button className="gap-2" onClick={handleGenerate} disabled={!linkId || pending}>
-          <Plus size={16} />
-          Generate QR
-        </Button>
-      </div>
+      {canEdit && (
+        <div className="mb-6 flex flex-col md:flex-row gap-3">
+          <select
+            value={linkId}
+            onChange={(e) => setLinkId(e.target.value)}
+            className="flex-1 px-3 py-2 rounded-lg border border-border bg-background"
+          >
+            {links.length === 0 ? (
+              <option value="">Create a link first</option>
+            ) : (
+              links.map((link) => (
+                <option key={link.id} value={link.id}>
+                  {link.title}
+                </option>
+              ))
+            )}
+          </select>
+          <Button className="gap-2" onClick={handleGenerate} disabled={!linkId || pending}>
+            <Plus size={16} />
+            Generate QR
+          </Button>
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
         {items.length === 0 ? (

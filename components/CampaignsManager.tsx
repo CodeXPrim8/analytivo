@@ -18,7 +18,13 @@ type CampaignCard = {
   startDate: Date
 }
 
-export function CampaignsManager({ initialCampaigns }: { initialCampaigns: CampaignCard[] }) {
+export function CampaignsManager({
+  initialCampaigns,
+  canEdit = true,
+}: {
+  initialCampaigns: CampaignCard[]
+  canEdit?: boolean
+}) {
   const router = useRouter()
   const [campaigns, setCampaigns] = useState(initialCampaigns)
   const [open, setOpen] = useState(false)
@@ -65,13 +71,15 @@ export function CampaignsManager({ initialCampaigns }: { initialCampaigns: Campa
           <h1 className="text-4xl font-bold mb-2">Campaigns</h1>
           <p className="text-muted-foreground">Group links and compare channel performance</p>
         </div>
-        <Button className="gap-2 font-semibold" onClick={() => setOpen(true)}>
-          <Plus size={18} />
-          New Campaign
-        </Button>
+        {canEdit && (
+          <Button className="gap-2 font-semibold" onClick={() => setOpen(true)}>
+            <Plus size={18} />
+            New Campaign
+          </Button>
+        )}
       </div>
 
-      {open && (
+      {open && canEdit && (
         <form
           onSubmit={handleCreate}
           className="mb-6 rounded-xl border border-border bg-card/50 p-6 space-y-4"
@@ -112,9 +120,14 @@ export function CampaignsManager({ initialCampaigns }: { initialCampaigns: Campa
                   <h3 className="font-semibold">{campaign.name}</h3>
                   <p className="text-xs text-muted-foreground capitalize">{campaign.status}</p>
                 </div>
-                <button onClick={() => handleDelete(campaign.id)} className="p-2 hover:bg-muted rounded-lg">
-                  <Trash2 size={16} />
-                </button>
+                {canEdit && (
+                  <button
+                    onClick={() => handleDelete(campaign.id)}
+                    className="p-2 hover:bg-muted rounded-lg"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
               {campaign.description && (
                 <p className="text-sm text-muted-foreground mb-4">{campaign.description}</p>
