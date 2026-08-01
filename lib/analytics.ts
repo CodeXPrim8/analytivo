@@ -25,7 +25,11 @@ export async function getLinkStats(
   const [totalClicks, uniqueVisitors, returningVisitors] = await Promise.all([
     prisma.click.count({ where }),
     prisma.click.groupBy({ by: ['visitorId'], where }).then((r) => r.length),
-    prisma.click.count({ where: { ...where, isReturning: true } }),
+    // Distinct people, not returning clicks — counting clicks here pushes the
+    // derived return rate above 100%.
+    prisma.click
+      .groupBy({ by: ['visitorId'], where: { ...where, isReturning: true } })
+      .then((r) => r.length),
   ])
 
   return { totalClicks, uniqueVisitors, returningVisitors }

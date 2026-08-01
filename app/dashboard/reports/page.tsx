@@ -1,5 +1,6 @@
 import { requireWorkspace, roleAtLeast } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
+import { emailEnabled } from '@/lib/email'
 import { ReportsManager } from '@/components/ReportsManager'
 
 export default async function ReportsPage() {
@@ -12,10 +13,15 @@ export default async function ReportsPage() {
   return (
     <ReportsManager
       canEdit={roleAtLeast(ctx.role, 'editor')}
+      emailConfigured={emailEnabled()}
       initialReports={reports.map((r) => ({
         id: r.id,
         name: r.name,
         type: r.type,
+        rangeDays: r.rangeDays,
+        schedule: r.schedule,
+        recipients: r.recipients,
+        lastSentAt: r.lastSentAt,
         createdAt: r.createdAt,
       }))}
     />

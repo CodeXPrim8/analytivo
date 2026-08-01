@@ -30,6 +30,14 @@ import {
   normalizeEmail,
 } from '@/lib/team'
 import { emailEnabled, inviteEmailHtml, sendEmail } from '@/lib/email'
+import {
+  buildReport,
+  normalizeType,
+  parseRecipients,
+  reportFileName,
+  reportToCsv,
+} from '@/lib/reports'
+import { deliverReport } from '@/lib/report-delivery'
 
 async function ready() {
   await ensureDatabase()
@@ -177,16 +185,50 @@ export async function getQRDataUrlAction(qrId: string) {
 
 /* -------------------------------------------------------------- reports */
 
-export async function createReportAction(name: string, type = 'performance') {
+const reportSchema = z.object({
+  name: z.string().min(1).max(120),
+  type: z.enum(['performance', 'audience', 'conversion', 'custom']).default('performance'),
+  rangeDays: z.coerce.number().int().min(1).max(365).default(30),
+  schedule: z.enum(['none', 'weekly', 'monthly']).default('none'),
+  recipients: z.string().max(1000).default(''),
+})
+
+export async function createReportAction(input: z.infer<typeof reportSchema>) {
   const ctx = await requireWorkspace()
   const denied = denyUnlessRole(ctx, 'editor')
   if (denied) return { error: denied }
 
+  const data = reportSchema.parse(input)
+  const recipients = parseRecipients(data.recipients)
+
+  if (data.schedule !== 'none' && recipients.length === 0) {
+    return { error: 'Add at least one recipient email to schedule this report.' }
+  }
+
   const report = await prisma.report.create({
-    data: { name, type, userId: ctx.ownerId },
+    data: {
+      name: data.name,
+      type: data.type,
+      rangeDays: data.rangeDays,
+      schedule: data.schedule === 'none' ? null : data.schedule,
+      recipients: recipients.join(','),
+      userId: ctx.ownerId,
+    },
   })
+
   revalidatePath('/dashboard/reports')
-  return { report }
+  return {
+    report: {
+      id: report.id,
+      name: report.name,
+      type: report.type,
+      rangeDays: report.rangeDays,
+      schedule: report.schedule,
+      recipients: report.recipients,
+      lastSentAt: report.lastSentAt,
+      createdAt: report.createdAt,
+    },
+  }
 }
 
 export async function deleteReportAction(id: string) {
@@ -197,6 +239,45 @@ export async function deleteReportAction(id: string) {
   await prisma.report.deleteMany({ where: { id, userId: ctx.ownerId } })
   revalidatePath('/dashboard/reports')
   return { ok: true }
+}
+
+export async function exportReportCsvAction(id: string) {
+  const ctx = await requireWorkspace()
+  const report = await prisma.report.findFirst({ where: { id, userId: ctx.ownerId } })
+  if (!report) return { error: 'Report not found' }
+
+  const built = await buildReport(ctx.ownerId, {
+    name: report.name,
+    type: normalizeType(report.type),
+    rangeDays: report.rangeDays,
+    workspaceName: ctx.workspaceName,
+  })
+
+  return { csv: reportToCsv(built), filename: reportFileName(built) }
+}
+
+export async function sendReportNowAction(id: string) {
+  const ctx = await requireWorkspace()
+  const denied = denyUnlessRole(ctx, 'editor')
+  if (denied) return { error: denied }
+
+  const report = await prisma.report.findFirst({ where: { id, userId: ctx.ownerId } })
+  if (!report) return { error: 'Report not found' }
+
+  const recipients = parseRecipients(report.recipients)
+  if (recipients.length === 0) {
+    return { error: 'This report has no recipients yet.' }
+  }
+  if (!emailEnabled()) {
+    return { error: 'Email delivery is not configured. Add RESEND_API_KEY to send reports.' }
+  }
+
+  const result = await deliverReport(report, ctx.workspaceName)
+  if (!result.ok) return { error: result.error }
+
+  revalidatePath('/dashboard/reports')
+  revalidatePath(`/dashboard/reports/${id}`)
+  return { ok: true, sent: result.sent }
 }
 
 /* ----------------------------------------------------------------- team */

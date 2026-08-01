@@ -218,3 +218,45 @@
     animation: slide-in-left 0.5s ease-out;
   }
 }
+
+/* Printing a report: drop the app chrome and switch to ink-friendly colours
+   so "Save as PDF" produces a clean document. */
+@media print {
+  aside,
+  header,
+  .no-print {
+    display: none !important;
+  }
+
+  html,
+  body,
+  main,
+  .report-surface {
+    background: #ffffff !important;
+    color: #111111 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  .report-surface * {
+    color: #111111 !important;
+    background: transparent !important;
+    border-color: #d4d4d8 !important;
+  }
+
+  .report-surface table {
+    page-break-inside: auto;
+  }
+
+  .report-surface tr {
+    page-break-inside: avoid;
+  }
+
+  .report-surface h2 {
+    page-break-after: avoid;
+  }
+
+  @page {
+    margin: 16mm;
+  }
+}

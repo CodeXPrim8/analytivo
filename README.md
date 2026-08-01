@@ -34,8 +34,9 @@ Set these Environment Variables (Production + Preview):
 - `BETTER_AUTH_URL` — primary domain, e.g. `https://analytivo.net`
 - `NEXT_PUBLIC_APP_URL` — same primary domain (used for short links)
 - `OPENAI_API_KEY` — optional; enables GPT-powered AI Insights (falls back to smart rules without it)
-- `RESEND_API_KEY` — optional; sends team invitations by email (invite links can be copied manually without it)
-- `EMAIL_FROM` — sender for invite emails, e.g. `Analytivo <invites@analytivo.net>`
+- `RESEND_API_KEY` — optional; sends team invitations and scheduled reports by email (invite links can be copied manually and reports exported without it)
+- `EMAIL_FROM` — sender for invite and report emails, e.g. `Analytivo <invites@analytivo.net>`
+- `CRON_SECRET` — long random string; required for scheduled report delivery
 
 Auth also trusts these hosts by default: `analytivo.net`, `analytivo.xyz`, `analytivo.com.ng`, `analytivo.top` (and `www` variants), plus `analytivo.vercel.app`.
 
@@ -71,3 +72,25 @@ Invite flow:
    workspace switcher in the sidebar
 
 Roles are enforced on the server in every action, not just hidden in the UI.
+
+## Reports
+
+A report is a saved view of the workspace analytics: a type, a rolling period,
+and an optional delivery schedule. Opening one at `/dashboard/reports/<id>`
+builds it fresh from current click data — nothing is cached, so the numbers
+always reflect the last N days ending today.
+
+| Type | Contains |
+| --- | --- |
+| Performance | Clicks per day, top links, traffic sources |
+| Audience | Devices, browsers, operating systems, countries, languages |
+| Conversion | Link engagement and repeat-visit rate per source |
+| Custom | All of the above in one document |
+
+Every report shows headline metrics compared against the immediately preceding
+period of the same length, and can be exported as CSV or printed to PDF.
+
+Scheduled delivery runs from a single daily Vercel cron at 08:00 UTC
+(`/api/cron/reports`). It sends each report whose weekly or monthly interval has
+elapsed, so `lastSentAt` — not the cron time — decides when a report goes out.
+The endpoint rejects any request without `Authorization: Bearer $CRON_SECRET`.

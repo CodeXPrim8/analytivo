@@ -163,18 +163,24 @@ model QRCode {
   @@index([linkId])
 }
 
+/// A saved reporting view. `rangeDays` is a rolling window so scheduled
+/// deliveries always cover the period leading up to the send.
 model Report {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   description String?
-  type        String   @default("performance")
+  type        String    @default("performance")
+  rangeDays   Int       @default(30)
+  recipients  String    @default("")
   schedule    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  lastSentAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([schedule])
 }
 
 /// A person invited to the workspace owned by `userId`.

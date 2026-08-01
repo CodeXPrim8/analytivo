@@ -34,3 +34,4 @@ Thumbs.db
 
 # Generated
 lib/generated/
+*.tsbuildinfo
