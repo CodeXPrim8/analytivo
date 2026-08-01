@@ -1,6 +1,7 @@
 import { requireWorkspace, roleAtLeast } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { CampaignsManager } from '@/components/CampaignsManager'
+import { UpgradeNotice } from '@/components/UpgradeNotice'
 
 export default async function CampaignsPage() {
   const ctx = await requireWorkspace()
@@ -41,9 +42,19 @@ export default async function CampaignsPage() {
   )
 
   return (
-    <CampaignsManager
-      initialCampaigns={serialized}
-      canEdit={roleAtLeast(ctx.role, 'editor')}
-    />
+    <div className="space-y-6">
+      {!ctx.capabilities.campaigns && (
+        <UpgradeNotice
+          title="Campaigns are a Pro feature"
+          description="Group links into campaigns and compare channel performance with UTM tracking on the Pro plan."
+          isOwner={ctx.isOwner}
+        />
+      )}
+      <CampaignsManager
+        initialCampaigns={serialized}
+        canEdit={roleAtLeast(ctx.role, 'editor')}
+        canCreate={ctx.capabilities.campaigns}
+      />
+    </div>
   )
 }

@@ -21,6 +21,12 @@ export default async function TeamPage() {
       workspaceName={ctx.workspaceName}
       role={ctx.role}
       emailConfigured={emailEnabled()}
+      isOwner={ctx.isOwner}
+      seats={{
+        // listTeamMembers excludes the owner, who always occupies a seat.
+        used: members.length + 1,
+        total: ctx.capabilities.teamSeats,
+      }}
     />
   )
 }

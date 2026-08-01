@@ -21,9 +21,12 @@ type CampaignCard = {
 export function CampaignsManager({
   initialCampaigns,
   canEdit = true,
+  canCreate = true,
 }: {
   initialCampaigns: CampaignCard[]
   canEdit?: boolean
+  /** Separate from canEdit so a downgrade still allows deleting old campaigns. */
+  canCreate?: boolean
 }) {
   const router = useRouter()
   const [campaigns, setCampaigns] = useState(initialCampaigns)
@@ -71,7 +74,7 @@ export function CampaignsManager({
           <h1 className="text-4xl font-bold mb-2">Campaigns</h1>
           <p className="text-muted-foreground">Group links and compare channel performance</p>
         </div>
-        {canEdit && (
+        {canEdit && canCreate && (
           <Button className="gap-2 font-semibold" onClick={() => setOpen(true)}>
             <Plus size={18} />
             New Campaign
@@ -79,7 +82,7 @@ export function CampaignsManager({
         )}
       </div>
 
-      {open && canEdit && (
+      {open && canEdit && canCreate && (
         <form
           onSubmit={handleCreate}
           className="mb-6 rounded-xl border border-border bg-card/50 p-6 space-y-4"

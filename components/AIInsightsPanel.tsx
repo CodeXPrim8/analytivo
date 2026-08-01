@@ -29,8 +29,12 @@ export function AIInsightsPanel({
   const refresh = () => {
     startTransition(async () => {
       const result = await refreshInsightsAction()
-      setInsights(result.insights)
-      setMode(result.provider)
+      if (result.error) {
+        setAnswer(result.error)
+        return
+      }
+      if (result.insights) setInsights(result.insights)
+      if (result.provider === 'openai' || result.provider === 'rules') setMode(result.provider)
     })
   }
 

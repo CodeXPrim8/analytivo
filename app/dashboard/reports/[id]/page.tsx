@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { emailEnabled } from '@/lib/email'
-import { buildReport, normalizeType, parseRecipients } from '@/lib/reports'
+import { buildReport, normalizeType, parseLinkIds, parseRecipients } from '@/lib/reports'
 import { requireWorkspace, roleAtLeast } from '@/lib/workspace'
 import { ReportView } from '@/components/ReportView'
 
@@ -22,6 +22,7 @@ export default async function ReportDetailPage({
     name: report.name,
     type: normalizeType(report.type),
     rangeDays: report.rangeDays,
+    linkIds: parseLinkIds(report.linkIds),
     workspaceName: ctx.workspaceName,
   })
 
@@ -36,6 +37,7 @@ export default async function ReportDetailPage({
         to: built.to,
         generatedAt: built.generatedAt,
         workspaceName: built.workspaceName,
+        scopeLabel: built.scopeLabel,
         summary: built.summary,
         sections: built.sections,
         hasData: built.hasData,
@@ -44,6 +46,8 @@ export default async function ReportDetailPage({
       schedule={report.schedule}
       lastSentAt={report.lastSentAt}
       canSend={roleAtLeast(ctx.role, 'editor')}
+      canExport={ctx.capabilities.reportDelivery}
+      isOwner={ctx.isOwner}
       emailConfigured={emailEnabled()}
     />
   )

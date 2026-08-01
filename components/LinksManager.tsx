@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Copy, Trash2, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { UpgradeNotice } from '@/components/UpgradeNotice'
 import { createLinkAction, deleteLinkAction } from '@/lib/actions'
 import { formatNumber, formatRelativeTime } from '@/lib/utils-helpers'
 import type { Link } from '@/lib/types'
@@ -14,10 +15,15 @@ export function LinksManager({
   initialLinks,
   campaigns,
   canEdit = true,
+  quota = null,
+  isOwner = true,
 }: {
   initialLinks: Link[]
   campaigns: CampaignOption[]
   canEdit?: boolean
+  /** null when the plan allows unlimited links. */
+  quota?: { used: number; limit: number } | null
+  isOwner?: boolean
 }) {
   const router = useRouter()
   const [links, setLinks] = useState(initialLinks)
@@ -71,14 +77,21 @@ export function LinksManager({
     })
   }
 
+  const quotaReached = quota !== null && quota.used >= quota.limit
+
   return (
     <div className="min-h-screen">
       <div className="flex items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-4xl font-bold mb-2">Links</h1>
           <p className="text-muted-foreground">Manage and track {links.length} video links</p>
+          {quota && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {quota.used} of {quota.limit} links used this month
+            </p>
+          )}
         </div>
-        {canEdit && (
+        {canEdit && !quotaReached && (
           <Button className="gap-2 font-semibold" onClick={() => setOpen(true)}>
             <Plus size={18} />
             Create Link
@@ -86,7 +99,16 @@ export function LinksManager({
         )}
       </div>
 
-      {open && canEdit && (
+      {quotaReached && (
+        <UpgradeNotice
+          className="mb-6"
+          title="You've reached this month's link limit"
+          description={`The Free plan includes ${quota.limit} new links per calendar month. Upgrade to Pro for unlimited links, or wait until next month.`}
+          isOwner={isOwner}
+        />
+      )}
+
+      {open && canEdit && !quotaReached && (
         <div className="mb-6 rounded-xl border border-border bg-card/50 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">New trackable link</h2>

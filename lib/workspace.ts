@@ -1,6 +1,14 @@
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { requireUser } from '@/lib/session'
+import {
+  capabilitiesFor,
+  normalizePlan,
+  upgradeMessage,
+  type GatedFeature,
+  type PlanCapabilities,
+  type PlanId,
+} from '@/lib/plans'
 
 /** Which workspace the signed-in user is currently viewing. */
 export const WORKSPACE_COOKIE = 'analytivo_ws'
@@ -24,6 +32,8 @@ export type WorkspaceSummary = {
   role: WorkspaceRole
   ownerName: string
   ownerEmail: string
+  /** Entitlements follow the owner's plan, not the visiting member's. */
+  plan: PlanId
 }
 
 export type WorkspaceContext = {
@@ -33,6 +43,8 @@ export type WorkspaceContext = {
   role: WorkspaceRole
   isOwner: boolean
   workspaceName: string
+  plan: PlanId
+  capabilities: PlanCapabilities
   workspaces: WorkspaceSummary[]
 }
 
@@ -41,13 +53,15 @@ export async function listWorkspacesForUser(userId: string): Promise<WorkspaceSu
   const [self, memberships] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, email: true, workspaceName: true },
+      select: { id: true, name: true, email: true, workspaceName: true, plan: true },
     }),
     prisma.teamMember.findMany({
       where: { memberUserId: userId, status: 'active' },
       orderBy: { acceptedAt: 'asc' },
       include: {
-        user: { select: { id: true, name: true, email: true, workspaceName: true } },
+        user: {
+          select: { id: true, name: true, email: true, workspaceName: true, plan: true },
+        },
       },
     }),
   ])
@@ -61,6 +75,7 @@ export async function listWorkspacesForUser(userId: string): Promise<WorkspaceSu
       role: 'owner',
       ownerName: self.name,
       ownerEmail: self.email,
+      plan: normalizePlan(self.plan),
     })
   }
 
@@ -72,6 +87,7 @@ export async function listWorkspacesForUser(userId: string): Promise<WorkspaceSu
       role: (membership.role as WorkspaceRole) || 'viewer',
       ownerName: membership.user.name,
       ownerEmail: membership.user.email,
+      plan: normalizePlan(membership.user.plan),
     })
   }
 
@@ -86,6 +102,7 @@ export async function requireWorkspace(): Promise<WorkspaceContext> {
   const requested = store.get(WORKSPACE_COOKIE)?.value
   // Falling back to the first entry keeps a revoked member on their own workspace.
   const active = workspaces.find((w) => w.ownerId === requested) || workspaces[0]
+  const plan = active?.plan ?? 'free'
 
   return {
     user: { id: user.id, name: user.name, email: user.email },
@@ -93,6 +110,8 @@ export async function requireWorkspace(): Promise<WorkspaceContext> {
     role: active?.role ?? 'owner',
     isOwner: (active?.ownerId ?? user.id) === user.id,
     workspaceName: active?.name ?? 'My Workspace',
+    plan,
+    capabilities: capabilitiesFor(plan),
     workspaces,
   }
 }
@@ -107,4 +126,13 @@ export function denyUnlessRole(ctx: WorkspaceContext, minimum: WorkspaceRole): s
 export async function requireWorkspaceRole(minimum: WorkspaceRole) {
   const ctx = await requireWorkspace()
   return { ctx, error: denyUnlessRole(ctx, minimum) }
+}
+
+/** Returns an upgrade message when the owner's plan lacks the feature, otherwise null. */
+export function denyUnlessCapability(
+  ctx: WorkspaceContext,
+  feature: GatedFeature,
+): string | null {
+  if (ctx.capabilities[feature]) return null
+  return upgradeMessage(feature, ctx.isOwner)
 }

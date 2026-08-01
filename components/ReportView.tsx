@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Download, Printer, Send, TrendingUp, TrendingDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { UpgradeNotice } from '@/components/UpgradeNotice'
 import { exportReportCsvAction, sendReportNowAction } from '@/lib/actions'
 
 type SummaryMetric = { label: string; value: string; change: number | null }
@@ -24,6 +25,7 @@ type Props = {
     to: Date
     generatedAt: Date
     workspaceName: string
+    scopeLabel: string
     summary: SummaryMetric[]
     sections: ReportSection[]
     hasData: boolean
@@ -32,6 +34,8 @@ type Props = {
   schedule: string | null
   lastSentAt: Date | null
   canSend: boolean
+  canExport: boolean
+  isOwner: boolean
   emailConfigured: boolean
 }
 
@@ -69,6 +73,8 @@ export function ReportView({
   schedule,
   lastSentAt,
   canSend,
+  canExport,
+  isOwner,
   emailConfigured,
 }: Props) {
   const [pending, startTransition] = useTransition()
@@ -126,25 +132,39 @@ export function ReportView({
             {report.typeLabel} report for {report.workspaceName} · {dateLabel(report.from)} –{' '}
             {dateLabel(report.to)}
           </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Links covered: <span className="text-foreground">{report.scopeLabel}</span>
+          </p>
         </div>
 
-        <div className="no-print flex flex-wrap items-center gap-2">
-          <Button variant="outline" className="gap-2" onClick={exportCsv} disabled={pending}>
-            <Download size={16} />
-            Export CSV
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={() => window.print()}>
-            <Printer size={16} />
-            Save as PDF
-          </Button>
-          {canSend && recipients.length > 0 && (
-            <Button className="gap-2" onClick={sendNow} disabled={pending || !emailConfigured}>
-              <Send size={16} />
-              {pending ? 'Sending…' : 'Email now'}
+        {canExport && (
+          <div className="no-print flex flex-wrap items-center gap-2">
+            <Button variant="outline" className="gap-2" onClick={exportCsv} disabled={pending}>
+              <Download size={16} />
+              Export CSV
             </Button>
-          )}
-        </div>
+            <Button variant="outline" className="gap-2" onClick={() => window.print()}>
+              <Printer size={16} />
+              Save as PDF
+            </Button>
+            {canSend && recipients.length > 0 && (
+              <Button className="gap-2" onClick={sendNow} disabled={pending || !emailConfigured}>
+                <Send size={16} />
+                {pending ? 'Sending…' : 'Email now'}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
+
+      {!canExport && (
+        <UpgradeNotice
+          className="no-print mb-6"
+          title="Exporting and emailing reports is a Pro feature"
+          description="You can read this report on any plan. Pro adds CSV export, PDF download, and automatic weekly or monthly delivery to your inbox."
+          isOwner={isOwner}
+        />
+      )}
 
       {error && (
         <div className="no-print mb-4 p-3 rounded-lg bg-red-500/10 text-red-400 text-sm">

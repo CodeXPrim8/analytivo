@@ -12,13 +12,22 @@ type Plan = {
   features: readonly string[]
 }
 
+type Usage = {
+  linksThisMonth: number
+  /** null when the plan allows unlimited links. */
+  linkLimit: number | null
+  campaignsCreated: number
+  seatsUsed: number
+  seatLimit: number
+}
+
 export function BillingPanel({
   currentPlan,
   usage,
   plans,
 }: {
   currentPlan: string
-  usage: { linksCreated: number; campaignsCreated: number }
+  usage: Usage
   plans: Plan[]
 }) {
   const router = useRouter()
@@ -40,10 +49,28 @@ export function BillingPanel({
         </p>
       </div>
 
-      <div className="mb-8 rounded-xl border border-border bg-card/50 p-6 grid md:grid-cols-2 gap-4">
+      <div className="mb-8 rounded-xl border border-border bg-card/50 p-6 grid sm:grid-cols-3 gap-4">
         <div>
-          <p className="text-sm text-muted-foreground">Links created</p>
-          <p className="text-2xl font-bold">{usage.linksCreated}</p>
+          <p className="text-sm text-muted-foreground">Links this month</p>
+          <p className="text-2xl font-bold">
+            {usage.linksThisMonth}
+            {usage.linkLimit !== null && (
+              <span className="text-base text-muted-foreground font-normal">
+                {' '}
+                / {usage.linkLimit}
+              </span>
+            )}
+          </p>
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Team seats</p>
+          <p className="text-2xl font-bold">
+            {usage.seatsUsed}
+            <span className="text-base text-muted-foreground font-normal">
+              {' '}
+              / {usage.seatLimit}
+            </span>
+          </p>
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Campaigns created</p>

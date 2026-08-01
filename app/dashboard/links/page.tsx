@@ -1,3 +1,4 @@
+import { startOfMonth } from 'date-fns'
 import { requireWorkspace, roleAtLeast } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { serializeLink } from '@/lib/analytics'
@@ -27,11 +28,24 @@ export default async function LinksPage() {
     }),
   )
 
+  const limit = ctx.capabilities.linksPerMonth
+  const quota =
+    limit === null
+      ? null
+      : {
+          limit,
+          used: await prisma.link.count({
+            where: { userId: ctx.ownerId, createdAt: { gte: startOfMonth(new Date()) } },
+          }),
+        }
+
   return (
     <LinksManager
       initialLinks={links}
       campaigns={campaigns}
       canEdit={roleAtLeast(ctx.role, 'editor')}
+      quota={quota}
+      isOwner={ctx.isOwner}
     />
   )
 }

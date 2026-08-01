@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { capabilitiesFor } from '@/lib/plans'
 import { deliverReport } from '@/lib/report-delivery'
 
 export const dynamic = 'force-dynamic'
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
 
   const reports = await prisma.report.findMany({
     where: { schedule: { in: Object.keys(INTERVAL_DAYS) } },
-    include: { user: { select: { workspaceName: true } } },
+    include: { user: { select: { workspaceName: true, plan: true } } },
   })
 
   const now = Date.now()
@@ -34,6 +35,12 @@ export async function GET(request: Request) {
   for (const report of reports) {
     const intervalDays = INTERVAL_DAYS[report.schedule || '']
     if (!intervalDays) continue
+
+    // A downgrade after scheduling must stop delivery.
+    if (!capabilitiesFor(report.user.plan).reportDelivery) {
+      results.push({ id: report.id, status: 'skipped', detail: 'plan does not include delivery' })
+      continue
+    }
 
     const dueAfter = intervalDays * 24 * 60 * 60 * 1000 - TOLERANCE_MS
     if (report.lastSentAt && now - report.lastSentAt.getTime() < dueAfter) {
@@ -48,6 +55,7 @@ export async function GET(request: Request) {
           name: report.name,
           type: report.type,
           rangeDays: report.rangeDays,
+          linkIds: report.linkIds,
           recipients: report.recipients,
           userId: report.userId,
         },

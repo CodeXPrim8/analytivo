@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Plus, Trash2, Copy, Check, Send, LogOut, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { RoleBadge } from '@/components/DashboardShell'
+import { UpgradeNotice } from '@/components/UpgradeNotice'
 import {
   inviteTeamMemberAction,
   removeTeamMemberAction,
@@ -35,6 +36,8 @@ type Props = {
   workspaceName: string
   role: 'owner' | MemberRole
   emailConfigured: boolean
+  isOwner: boolean
+  seats: { used: number; total: number }
 }
 
 const ROLE_HELP: Record<MemberRole | 'owner', string> = {
@@ -56,6 +59,8 @@ export function TeamManager({
   workspaceName,
   role,
   emailConfigured,
+  isOwner,
+  seats,
 }: Props) {
   const router = useRouter()
   const [members, setMembers] = useState(initialMembers)
@@ -66,6 +71,7 @@ export function TeamManager({
   const [form, setForm] = useState({ name: '', email: '', role: 'viewer' as MemberRole })
 
   const canManage = role === 'owner' || role === 'admin'
+  const seatsFull = seats.used >= seats.total
 
   const copyLink = async (url: string, id: string) => {
     try {
@@ -172,6 +178,9 @@ export function TeamManager({
               ? `Invite collaborators to ${workspaceName}`
               : `People with access to ${workspaceName}`}
           </p>
+          <p className="text-sm text-muted-foreground mt-1">
+            {seats.used} of {seats.total} seat{seats.total === 1 ? '' : 's'} used
+          </p>
         </div>
         {role !== 'owner' && (
           <Button variant="outline" onClick={leave} disabled={pending} className="gap-2">
@@ -190,7 +199,24 @@ export function TeamManager({
         </div>
       )}
 
-      {canManage && (
+      {canManage && seatsFull && (
+        <UpgradeNotice
+          className="mb-6"
+          title={
+            seats.total <= 1
+              ? 'Your plan includes a single seat'
+              : `All ${seats.total} seats are in use`
+          }
+          description={
+            seats.total <= 1
+              ? 'The Free plan covers you alone. Upgrade to Pro for 5 seats and invite collaborators into this workspace.'
+              : 'Upgrade for more seats, or remove a member below to free one up.'
+          }
+          isOwner={isOwner}
+        />
+      )}
+
+      {canManage && !seatsFull && (
         <>
           {!emailConfigured && (
             <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 text-amber-400 text-sm">

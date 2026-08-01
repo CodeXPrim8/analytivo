@@ -73,12 +73,33 @@ Invite flow:
 
 Roles are enforced on the server in every action, not just hidden in the UI.
 
+## Plans and limits
+
+`lib/plans.ts` is the single source of truth for what each plan may do, and
+`PLAN_CAPABILITIES` is what the server actually enforces.
+
+| | Free | Pro | Business |
+| --- | --- | --- | --- |
+| New links per month | 25 | unlimited | unlimited |
+| Team seats (including the owner) | 1 | 5 | 25 |
+| Campaigns | — | yes | yes |
+| AI insights | — | yes | yes |
+| Report export, email and scheduling | — | yes | yes |
+
+Entitlements follow the **workspace owner's** plan, so an invited member of a Pro
+workspace gets Pro features regardless of their own account. Limits are checked
+in the server actions rather than only hidden in the UI, and the scheduled
+report cron re-checks entitlement so a downgrade stops delivery.
+
+Everything not listed stays available on Free: links, QR codes, analytics,
+notifications, and reading reports.
+
 ## Reports
 
-A report is a saved view of the workspace analytics: a type, a rolling period,
-and an optional delivery schedule. Opening one at `/dashboard/reports/<id>`
-builds it fresh from current click data — nothing is cached, so the numbers
-always reflect the last N days ending today.
+A report is a saved view of the workspace analytics: a type, a rolling period, a
+set of links, and an optional delivery schedule. Opening one at
+`/dashboard/reports/<id>` builds it fresh from current click data — nothing is
+cached, so the numbers always reflect the last N days ending today.
 
 | Type | Contains |
 | --- | --- |
@@ -89,6 +110,13 @@ always reflect the last N days ending today.
 
 Every report shows headline metrics compared against the immediately preceding
 period of the same length, and can be exported as CSV or printed to PDF.
+
+A report either covers every link in the workspace or a chosen subset, picked
+when it is created. The scope is stored as a comma-separated `Report.linkIds`,
+where an empty value means all links — so reports created before scoping existed
+keep covering everything. Ownership is re-checked on every build, and a scope
+whose links have since been deleted reports zero rather than widening back to
+the whole workspace.
 
 Scheduled delivery runs from a single daily Vercel cron at 08:00 UTC
 (`/api/cron/reports`). It sends each report whose weekly or monthly interval has

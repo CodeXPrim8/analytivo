@@ -2,13 +2,20 @@ import { format } from 'date-fns'
 import { prisma } from '@/lib/db'
 import { emailEnabled, sendEmail } from '@/lib/email'
 import { appBaseUrl } from '@/lib/links'
-import { buildReport, normalizeType, parseRecipients, reportToHtml } from '@/lib/reports'
+import {
+  buildReport,
+  normalizeType,
+  parseLinkIds,
+  parseRecipients,
+  reportToHtml,
+} from '@/lib/reports'
 
 export type DeliverableReport = {
   id: string
   name: string
   type: string
   rangeDays: number
+  linkIds: string
   recipients: string
   userId: string
 }
@@ -30,6 +37,7 @@ export async function deliverReport(report: DeliverableReport, workspaceName: st
     name: report.name,
     type: normalizeType(report.type),
     rangeDays: report.rangeDays,
+    linkIds: parseLinkIds(report.linkIds),
     workspaceName,
   })
 

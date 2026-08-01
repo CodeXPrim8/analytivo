@@ -171,6 +171,9 @@ model Report {
   description String?
   type        String    @default("performance")
   rangeDays   Int       @default(30)
+  /// Comma-separated link ids the report covers. Empty means every link in the
+  /// workspace, which is also what reports created before scoping existed mean.
+  linkIds     String    @default("")
   recipients  String    @default("")
   schedule    String?
   lastSentAt  DateTime?

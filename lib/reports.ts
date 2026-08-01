@@ -47,6 +47,8 @@ export type BuiltReport = {
   to: Date
   generatedAt: Date
   workspaceName: string
+  /** Human-readable scope, e.g. "All links" or "2 links: Party, The Wrong Bride". */
+  scopeLabel: string
   summary: SummaryMetric[]
   sections: ReportSection[]
   hasData: boolean
@@ -63,6 +65,17 @@ export function parseRecipients(value: string): string[] {
     .filter((entry) => entry.includes('@'))
 }
 
+export function parseLinkIds(value: string): string[] {
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+}
+
+export function serializeLinkIds(ids: string[]): string {
+  return Array.from(new Set(ids.filter(Boolean))).join(',')
+}
+
 const num = (value: number) => value.toLocaleString('en-US')
 const pct = (value: number) => `${value.toFixed(1)}%`
 
@@ -71,8 +84,16 @@ function changeFrom(current: number, previous: number) {
   return previous === 0 ? null : percentChange(current, previous)
 }
 
-function rangeWhere(ownerId: string, from: Date) {
-  return { createdAt: { gte: from }, link: { userId: ownerId } }
+/**
+ * `linkIds` undefined covers the whole workspace; an array restricts to those
+ * links, and an empty array intentionally matches nothing so a report whose
+ * links were all deleted reads as zero instead of silently widening.
+ */
+function rangeWhere(ownerId: string, from: Date, linkIds?: string[]) {
+  return {
+    createdAt: { gte: from },
+    link: { userId: ownerId, ...(linkIds ? { id: { in: linkIds } } : {}) },
+  }
 }
 
 /** Counts of a single click attribute over the window, biggest first. */
@@ -81,11 +102,12 @@ async function breakdown(
   field: 'source' | 'device' | 'browser' | 'os' | 'country' | 'language',
   from: Date,
   fallback: string,
+  linkIds?: string[],
   limit = 10,
 ) {
   const grouped = await prisma.click.groupBy({
     by: [field],
-    where: rangeWhere(ownerId, from),
+    where: rangeWhere(ownerId, from, linkIds),
     _count: { _all: true },
   })
 
@@ -102,10 +124,10 @@ async function breakdown(
     .slice(0, limit)
 }
 
-async function topLinks(ownerId: string, from: Date, limit = 10) {
+async function topLinks(ownerId: string, from: Date, linkIds?: string[], limit = 10) {
   const grouped = await prisma.click.groupBy({
     by: ['linkId'],
-    where: rangeWhere(ownerId, from),
+    where: rangeWhere(ownerId, from, linkIds),
     _count: { _all: true },
   })
 
@@ -147,9 +169,9 @@ async function topLinks(ownerId: string, from: Date, limit = 10) {
   })
 }
 
-async function dailyClicks(ownerId: string, from: Date, days: number) {
+async function dailyClicks(ownerId: string, from: Date, days: number, linkIds?: string[]) {
   const clicks = await prisma.click.findMany({
-    where: rangeWhere(ownerId, from),
+    where: rangeWhere(ownerId, from, linkIds),
     select: { createdAt: true },
   })
 
@@ -169,16 +191,16 @@ async function dailyClicks(ownerId: string, from: Date, days: number) {
 }
 
 /** Repeat-visit behaviour per traffic source. */
-async function sourceQuality(ownerId: string, from: Date, limit = 10) {
+async function sourceQuality(ownerId: string, from: Date, linkIds?: string[], limit = 10) {
   const [all, returning] = await Promise.all([
     prisma.click.groupBy({
       by: ['source'],
-      where: rangeWhere(ownerId, from),
+      where: rangeWhere(ownerId, from, linkIds),
       _count: { _all: true },
     }),
     prisma.click.groupBy({
       by: ['source'],
-      where: { ...rangeWhere(ownerId, from), isReturning: true },
+      where: { ...rangeWhere(ownerId, from, linkIds), isReturning: true },
       _count: { _all: true },
     }),
   ])
@@ -204,18 +226,58 @@ async function sourceQuality(ownerId: string, from: Date, limit = 10) {
     .slice(0, limit)
 }
 
+/** Names the links a report covers, flagging any that no longer exist. */
+function scopeLabelFor(titles: string[], requestedCount: number) {
+  if (titles.length === 0) return 'No matching links — they may have been deleted'
+
+  const shown = titles.slice(0, 3).join(', ')
+  const extra = titles.length - 3
+  const label =
+    titles.length === 1
+      ? shown
+      : `${titles.length} links: ${shown}${extra > 0 ? ` +${extra} more` : ''}`
+
+  const missing = requestedCount - titles.length
+  return missing > 0 ? `${label} (${missing} deleted)` : label
+}
+
 export async function buildReport(
   ownerId: string,
-  options: { name: string; type: ReportType; rangeDays: number; workspaceName: string },
+  options: {
+    name: string
+    type: ReportType
+    rangeDays: number
+    workspaceName: string
+    /** Empty or omitted covers every link in the workspace. */
+    linkIds?: string[]
+  },
 ): Promise<BuiltReport> {
   const { name, type, rangeDays, workspaceName } = options
   const to = new Date()
   const from = startOfDay(subDays(to, rangeDays - 1))
   const previousFrom = startOfDay(subDays(to, rangeDays * 2 - 1))
 
+  const requested = options.linkIds?.length ? options.linkIds : undefined
+  let scopeLabel = 'All links'
+  let linkIds: string[] | undefined
+
+  if (requested) {
+    // Re-check ownership so a stale or borrowed id can never widen the scope.
+    const links = await prisma.link.findMany({
+      where: { id: { in: requested }, userId: ownerId },
+      select: { id: true, title: true },
+      orderBy: { createdAt: 'asc' },
+    })
+    linkIds = links.map((link) => link.id)
+    scopeLabel = scopeLabelFor(
+      links.map((link) => link.title || 'Untitled link'),
+      requested.length,
+    )
+  }
+
   const [current, previous] = await Promise.all([
-    getLinkStats(ownerId, undefined, { from }),
-    getLinkStats(ownerId, undefined, { from: previousFrom, to: from }),
+    getLinkStats(ownerId, linkIds, { from }),
+    getLinkStats(ownerId, linkIds, { from: previousFrom, to: from }),
   ])
 
   const returnRate = (stats: { uniqueVisitors: number; returningVisitors: number }) =>
@@ -311,9 +373,9 @@ export async function buildReport(
 
   if (wantsPerformance) {
     const [daily, links, sources] = await Promise.all([
-      dailyClicks(ownerId, from, rangeDays),
-      topLinks(ownerId, from),
-      breakdown(ownerId, 'source', from, 'direct'),
+      dailyClicks(ownerId, from, rangeDays, linkIds),
+      topLinks(ownerId, from, linkIds),
+      breakdown(ownerId, 'source', from, 'direct', linkIds),
     ])
 
     sections.push({
@@ -339,11 +401,11 @@ export async function buildReport(
 
   if (wantsAudience) {
     const [devices, browsers, systems, countries, languages] = await Promise.all([
-      breakdown(ownerId, 'device', from, 'unknown'),
-      breakdown(ownerId, 'browser', from, 'unknown'),
-      breakdown(ownerId, 'os', from, 'unknown'),
-      breakdown(ownerId, 'country', from, 'unknown'),
-      breakdown(ownerId, 'language', from, 'unknown'),
+      breakdown(ownerId, 'device', from, 'unknown', linkIds),
+      breakdown(ownerId, 'browser', from, 'unknown', linkIds),
+      breakdown(ownerId, 'os', from, 'unknown', linkIds),
+      breakdown(ownerId, 'country', from, 'unknown', linkIds),
+      breakdown(ownerId, 'language', from, 'unknown', linkIds),
     ])
 
     const audienceSections: [string, typeof devices][] = [
@@ -366,8 +428,8 @@ export async function buildReport(
 
   if (wantsConversion) {
     const [links, sources] = await Promise.all([
-      topLinks(ownerId, from),
-      sourceQuality(ownerId, from),
+      topLinks(ownerId, from, linkIds),
+      sourceQuality(ownerId, from, linkIds),
     ])
 
     sections.push({
@@ -393,6 +455,7 @@ export async function buildReport(
     to,
     generatedAt: new Date(),
     workspaceName,
+    scopeLabel,
     summary: summaryByType[type],
     sections,
     hasData: current.totalClicks > 0,
@@ -416,6 +479,7 @@ export function reportToCsv(report: BuiltReport) {
       csvCell(`Generated ${format(report.generatedAt, "yyyy-MM-dd HH:mm")}`),
     ].join(','),
   )
+  lines.push(['Links covered', csvCell(report.scopeLabel)].join(','))
   lines.push('')
 
   lines.push('Summary')
@@ -533,9 +597,12 @@ export function reportToHtml(report: BuiltReport, viewUrl?: string) {
   <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#0a0e27;padding:32px;color:#e6e8f0">
     <div style="max-width:640px;margin:0 auto;background:#111634;border:1px solid #23294d;border-radius:14px;padding:32px">
       <h1 style="margin:0 0 4px;font-size:22px;color:#ffffff">${escapeHtml(report.name)}</h1>
-      <p style="margin:0 0 24px;color:#7b81a0;font-size:13px">
+      <p style="margin:0 0 4px;color:#7b81a0;font-size:13px">
         ${escapeHtml(report.typeLabel)} report for ${escapeHtml(report.workspaceName)} ·
         ${format(report.from, 'd MMM yyyy')} – ${format(report.to, 'd MMM yyyy')}
+      </p>
+      <p style="margin:0 0 24px;color:#7b81a0;font-size:13px">
+        Links covered: ${escapeHtml(report.scopeLabel)}
       </p>
       <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse"><tr>${summary}</tr></table>
       ${sections}

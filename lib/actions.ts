@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
+import { startOfMonth } from 'date-fns'
 import { z } from 'zod'
 import QRCode from 'qrcode'
 import { ensureDatabase, prisma } from '@/lib/db'
@@ -18,6 +19,7 @@ import {
 } from '@/lib/notifications'
 import {
   WORKSPACE_COOKIE,
+  denyUnlessCapability,
   denyUnlessRole,
   listWorkspacesForUser,
   requireWorkspace,
@@ -33,9 +35,11 @@ import { emailEnabled, inviteEmailHtml, sendEmail } from '@/lib/email'
 import {
   buildReport,
   normalizeType,
+  parseLinkIds,
   parseRecipients,
   reportFileName,
   reportToCsv,
+  serializeLinkIds,
 } from '@/lib/reports'
 import { deliverReport } from '@/lib/report-delivery'
 
@@ -63,6 +67,13 @@ function revalidateWorkspace() {
   revalidatePath('/dashboard/team')
 }
 
+/** Links created by this workspace in the current calendar month. */
+async function linksUsedThisMonth(ownerId: string) {
+  return prisma.link.count({
+    where: { userId: ownerId, createdAt: { gte: startOfMonth(new Date()) } },
+  })
+}
+
 /* ---------------------------------------------------------------- links */
 
 const createLinkSchema = z.object({
@@ -80,6 +91,20 @@ export async function createLinkAction(input: z.infer<typeof createLinkSchema>) 
   if (denied) return { error: denied }
 
   const data = createLinkSchema.parse(input)
+
+  const monthlyLimit = ctx.capabilities.linksPerMonth
+  if (monthlyLimit !== null) {
+    const used = await linksUsedThisMonth(ctx.ownerId)
+    if (used >= monthlyLimit) {
+      return {
+        error: `You have used all ${monthlyLimit} links included this month. ${
+          ctx.isOwner
+            ? 'Upgrade from the Billing page for unlimited links.'
+            : 'Ask the workspace owner to upgrade.'
+        }`,
+      }
+    }
+  }
 
   if (!isValidVideoUrl(data.originalUrl)) {
     return { error: 'Enter a valid http(s) URL' }
@@ -128,7 +153,7 @@ const campaignSchema = z.object({
 
 export async function createCampaignAction(input: z.infer<typeof campaignSchema>) {
   const ctx = await requireWorkspace()
-  const denied = denyUnlessRole(ctx, 'editor')
+  const denied = denyUnlessRole(ctx, 'editor') || denyUnlessCapability(ctx, 'campaigns')
   if (denied) return { error: denied }
 
   const data = campaignSchema.parse(input)
@@ -191,6 +216,8 @@ const reportSchema = z.object({
   rangeDays: z.coerce.number().int().min(1).max(365).default(30),
   schedule: z.enum(['none', 'weekly', 'monthly']).default('none'),
   recipients: z.string().max(1000).default(''),
+  /** Empty means every link in the workspace. */
+  linkIds: z.array(z.string()).max(200).default([]),
 })
 
 export async function createReportAction(input: z.infer<typeof reportSchema>) {
@@ -204,12 +231,31 @@ export async function createReportAction(input: z.infer<typeof reportSchema>) {
   if (data.schedule !== 'none' && recipients.length === 0) {
     return { error: 'Add at least one recipient email to schedule this report.' }
   }
+  if (data.schedule !== 'none') {
+    const gated = denyUnlessCapability(ctx, 'reportDelivery')
+    if (gated) return { error: gated }
+  }
+
+  // Only keep ids this workspace actually owns, so a tampered form can't scope
+  // a report onto someone else's links.
+  let linkIds: string[] = []
+  if (data.linkIds.length > 0) {
+    const owned = await prisma.link.findMany({
+      where: { id: { in: data.linkIds }, userId: ctx.ownerId },
+      select: { id: true },
+    })
+    if (owned.length === 0) {
+      return { error: 'Select at least one link from this workspace, or choose all links.' }
+    }
+    linkIds = owned.map((link) => link.id)
+  }
 
   const report = await prisma.report.create({
     data: {
       name: data.name,
       type: data.type,
       rangeDays: data.rangeDays,
+      linkIds: serializeLinkIds(linkIds),
       schedule: data.schedule === 'none' ? null : data.schedule,
       recipients: recipients.join(','),
       userId: ctx.ownerId,
@@ -223,6 +269,7 @@ export async function createReportAction(input: z.infer<typeof reportSchema>) {
       name: report.name,
       type: report.type,
       rangeDays: report.rangeDays,
+      linkIds: report.linkIds,
       schedule: report.schedule,
       recipients: report.recipients,
       lastSentAt: report.lastSentAt,
@@ -243,6 +290,9 @@ export async function deleteReportAction(id: string) {
 
 export async function exportReportCsvAction(id: string) {
   const ctx = await requireWorkspace()
+  const denied = denyUnlessCapability(ctx, 'reportDelivery')
+  if (denied) return { error: denied }
+
   const report = await prisma.report.findFirst({ where: { id, userId: ctx.ownerId } })
   if (!report) return { error: 'Report not found' }
 
@@ -250,6 +300,7 @@ export async function exportReportCsvAction(id: string) {
     name: report.name,
     type: normalizeType(report.type),
     rangeDays: report.rangeDays,
+    linkIds: parseLinkIds(report.linkIds),
     workspaceName: ctx.workspaceName,
   })
 
@@ -258,7 +309,7 @@ export async function exportReportCsvAction(id: string) {
 
 export async function sendReportNowAction(id: string) {
   const ctx = await requireWorkspace()
-  const denied = denyUnlessRole(ctx, 'editor')
+  const denied = denyUnlessRole(ctx, 'editor') || denyUnlessCapability(ctx, 'reportDelivery')
   if (denied) return { error: denied }
 
   const report = await prisma.report.findFirst({ where: { id, userId: ctx.ownerId } })
@@ -311,6 +362,30 @@ export async function inviteTeamMemberAction(input: z.infer<typeof teamSchema>) 
   })
   if (existing?.status === 'active') {
     return { error: 'That person is already on your team.' }
+  }
+
+  // Re-inviting someone already on the roster reuses their seat.
+  if (!existing) {
+    const roster = await prisma.teamMember.count({
+      where: { userId: ctx.ownerId, status: { in: ['pending', 'active'] } },
+    })
+    const seats = ctx.capabilities.teamSeats
+    if (roster + 1 >= seats) {
+      return {
+        error:
+          seats <= 1
+            ? `Your plan includes a single seat for you alone. ${
+                ctx.isOwner
+                  ? 'Upgrade from the Billing page to invite teammates.'
+                  : 'Ask the workspace owner to upgrade.'
+              }`
+            : `All ${seats} seats on your plan are in use. ${
+                ctx.isOwner
+                  ? 'Upgrade from the Billing page or remove a member first.'
+                  : 'Ask the workspace owner to upgrade or free a seat.'
+              }`,
+      }
+    }
   }
 
   const token = newInviteToken()
@@ -628,6 +703,9 @@ export async function markAllNotificationsReadAction() {
 
 export async function refreshInsightsAction() {
   const ctx = await requireWorkspace()
+  const denied = denyUnlessCapability(ctx, 'aiInsights')
+  if (denied) return { error: denied }
+
   const insights = await generateInsightsForUser(ctx.ownerId, ctx.user.id)
   revalidatePath('/dashboard/ai-insights')
   revalidatePath('/dashboard')
@@ -642,6 +720,9 @@ export async function refreshInsightsAction() {
 
 export async function askInsightAction(question: string) {
   const ctx = await requireWorkspace()
+  const denied = denyUnlessCapability(ctx, 'aiInsights')
+  if (denied) return { error: denied }
+
   const q = question.trim()
   if (!q) return { error: 'Ask a question about your performance' }
 

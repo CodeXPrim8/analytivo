@@ -413,7 +413,9 @@ export async function generateInsightsForUser(userId: string, notifyUserId?: str
   if (hasOpenAI() && ctx.clickCount > 0) {
     try {
       insights = await generateAiInsights(ctx)
-    } catch {
+    } catch (error) {
+      // Falling back keeps the page working, but silence hides a bad key or exhausted quota.
+      console.error('[insights] OpenAI generation failed, falling back to rules:', error)
       insights = ruleBasedInsights(ctx)
     }
   } else {
@@ -430,7 +432,8 @@ export async function answerInsightQuestion(userId: string, question: string) {
     try {
       const answer = await answerWithAi(ctx, question)
       return { answer, provider: 'openai' as const }
-    } catch {
+    } catch (error) {
+      console.error('[insights] OpenAI answer failed, falling back to rules:', error)
       return { answer: answerFromRules(ctx, question), provider: 'rules' as const }
     }
   }
