@@ -17,7 +17,25 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   workspaceName String         @default("My Workspace")
+  /// Effective entitlement. Only the Paystack webhook and the billing sweep may
+  /// raise this above "free" — never a user action.
   plan          String         @default("free")
+
+  /// Paystack customer code, kept so repeat checkouts reuse one customer.
+  paystackCustomerCode String?
+  /// Paystack subscription code; null while on free.
+  subscriptionCode     String? @unique
+  /// Paystack email token, required alongside the code to cancel.
+  subscriptionToken    String?
+  /// none | active | past_due | canceled
+  subscriptionStatus   String  @default("none")
+  /// Plan the subscription pays for, which can outlive a downgrade request.
+  subscriptionPlan     String?
+  /// Paid access lasts until this instant even after a failed renewal.
+  currentPeriodEnd     DateTime?
+  /// Set when the subscription is stopped but the paid period has not elapsed.
+  cancelAtPeriodEnd    Boolean @default(false)
+
   sessions      Session[]
   accounts      Account[]
   campaigns     Campaign[]
@@ -220,4 +238,15 @@ model Insight {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+/// Payment providers retry deliveries, so every handled payload is recorded by
+/// a hash of its body and replays are dropped rather than applied twice.
+model ProcessedWebhook {
+  id         String   @id
+  provider   String   @default("paystack")
+  event      String
+  receivedAt DateTime @default(now())
+
+  @@index([receivedAt])
 }

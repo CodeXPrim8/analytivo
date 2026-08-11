@@ -94,6 +94,61 @@ report cron re-checks entitlement so a downgrade stops delivery.
 Everything not listed stays available on Free: links, QR codes, analytics,
 notifications, and reading reports.
 
+## Billing
+
+Payments run through [Paystack](https://paystack.com) hosted checkout, so card
+details never reach this app.
+
+The rule the whole design rests on: **only the webhook may grant a paid plan.**
+`startCheckoutAction` creates a Paystack transaction and returns a redirect URL
+without touching the database, because reaching that code proves nothing about
+whether money moved. Paystack then calls `/api/webhooks/paystack`, and that
+handler is the only caller of `applyPlanChange`. Setting the plan on the success
+redirect instead would both miss customers who close the tab after paying and
+let anyone upgrade by visiting a URL.
+
+Prices live in the Paystack dashboard, not in this repo. Checkout reads the plan
+amount and currency from Paystack at the moment it starts, so a customer can
+only ever be charged what the dashboard says.
+
+Three defences on the webhook itself: the payload is rejected unless its
+`x-paystack-signature` matches an HMAC SHA512 of the **raw** body under the
+secret key; each handled body is recorded in `ProcessedWebhook` by hash so
+Paystack's retries cannot apply twice; and rather than trusting an event's
+contents, the handler re-fetches the subscription from Paystack so out-of-order
+deliveries do not matter.
+
+Access outlives payment problems. A failed renewal or a cancellation sets the
+status but keeps the plan until `currentPeriodEnd`, and the daily sweep at
+`/api/cron/billing` is what finally drops the workspace to Free. That means a
+card declining on renewal day does not lock anyone out mid-month.
+
+Downgrading reconciles seats. Because the seat limit is only checked when
+inviting, a workspace that drops to a smaller plan would otherwise keep every
+member it already had. `applyPlanChange` suspends the newest members over the
+allowance — longest-standing members and accepted invites keep their seats —
+and upgrading restores them automatically. Suspended invites cannot be accepted
+or reshared.
+
+Setting up Paystack:
+
+1. Create a plan per paid tier under **Dashboard → Plans**, then copy each plan
+   code into `PAYSTACK_PLAN_CODE_PRO` and `PAYSTACK_PLAN_CODE_BUSINESS`.
+2. Copy the secret key from **Settings → API Keys & Webhooks** into
+   `PAYSTACK_SECRET_KEY`. Use `sk_test_...` until you are ready to charge.
+3. Set the webhook URL on that same page to
+   `https://your-domain/api/webhooks/paystack`.
+
+Without these variables the app runs normally with everyone on Free and the
+checkout buttons disabled. In local development only, the billing page shows
+buttons that set the plan directly so the gates can be exercised without a card;
+they are unreachable on any deployment because `NODE_ENV` is `production` there.
+
+`npx tsx scripts/verify-billing.ts` exercises the parts that are easy to break
+and hard to notice: signature verification against forged and tampered bodies,
+replay protection, the grace-period rules, and seat suspension and restoration.
+It creates a throwaway workspace and deletes it afterwards.
+
 ## Reports
 
 A report is a saved view of the workspace analytics: a type, a rolling period, a

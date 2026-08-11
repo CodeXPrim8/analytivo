@@ -13,7 +13,8 @@ export type TeamMemberView = {
   email: string
   role: MemberRole
   avatar?: string
-  status: 'pending' | 'active'
+  /** "suspended" means a downgrade took the seat away; the record is kept. */
+  status: 'pending' | 'active' | 'suspended'
   inviteUrl?: string
   invitedAt: Date
   joinedAt: Date
@@ -49,8 +50,11 @@ export async function listTeamMembers(ownerId: string, viewerId: string): Promis
     email: m.email,
     role: (m.role as MemberRole) || 'viewer',
     avatar: m.avatar || undefined,
-    status: m.status === 'active' ? 'active' : 'pending',
-    inviteUrl: m.status !== 'active' && m.inviteToken ? inviteUrlFor(m.inviteToken) : undefined,
+    status:
+      m.status === 'active' ? 'active' : m.status === 'suspended' ? 'suspended' : 'pending',
+    // A suspended invite must not be shareable, or it would restore a seat the
+    // plan no longer includes.
+    inviteUrl: m.status === 'pending' && m.inviteToken ? inviteUrlFor(m.inviteToken) : undefined,
     invitedAt: m.invitedAt,
     joinedAt: m.joinedAt,
     acceptedAt: m.acceptedAt || undefined,

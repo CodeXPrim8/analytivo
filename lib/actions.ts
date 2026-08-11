@@ -7,7 +7,7 @@ import { z } from 'zod'
 import QRCode from 'qrcode'
 import { ensureDatabase, prisma } from '@/lib/db'
 import { requireUser } from '@/lib/session'
-import { generateAlias, isValidVideoUrl, shortUrlFor } from '@/lib/links'
+import { appBaseUrl, generateAlias, isValidVideoUrl, shortUrlFor } from '@/lib/links'
 import { answerInsightQuestion, generateInsightsForUser, insightsProviderLabel } from '@/lib/insights'
 import { serializeLink } from '@/lib/analytics'
 import {
@@ -42,6 +42,15 @@ import {
   serializeLinkIds,
 } from '@/lib/reports'
 import { deliverReport } from '@/lib/report-delivery'
+import { applyPlanChange } from '@/lib/billing'
+import { PLAN_NAMES } from '@/lib/plans'
+import {
+  disableSubscription,
+  fetchPlan,
+  initializeTransaction,
+  paystackEnabled,
+  planCodeFor,
+} from '@/lib/paystack'
 
 async function ready() {
   await ensureDatabase()
@@ -547,6 +556,10 @@ export async function acceptInviteAction(token: string) {
   })
   if (!invite) return { error: 'This invitation link is no longer valid.' }
   if (invite.userId === user.id) return { error: 'You already own this workspace.' }
+  if (invite.status === 'suspended') {
+    // Accepting would hand out a seat the workspace's plan no longer covers.
+    return { error: 'This workspace has run out of seats. Ask the owner to upgrade.' }
+  }
   if (invite.status === 'active') return { error: 'This invitation was already accepted.' }
 
   if (normalizeEmail(invite.email) !== normalizeEmail(user.email)) {
@@ -732,15 +745,91 @@ export async function askInsightAction(question: string) {
 
 /* -------------------------------------------------------------- billing */
 
-export async function upgradePlanAction(plan: 'free' | 'pro' | 'business') {
+/**
+ * Starts a hosted Paystack checkout and hands back the URL to send the browser
+ * to. Deliberately does not touch `plan`: only the webhook may do that, since
+ * reaching this code proves nothing about whether a payment succeeded.
+ */
+export async function startCheckoutAction(plan: 'pro' | 'business') {
   const ctx = await requireWorkspace()
   const denied = denyUnlessRole(ctx, 'owner')
   if (denied) return { error: denied }
 
+  if (!paystackEnabled()) {
+    return { error: 'Payments are not configured yet. Add PAYSTACK_SECRET_KEY to enable checkout.' }
+  }
+
+  const planCode = planCodeFor(plan)
+  if (!planCode) {
+    return { error: `No Paystack plan code is configured for ${PLAN_NAMES[plan]}.` }
+  }
+
+  // Read the price from Paystack rather than from this repo, so a customer can
+  // only ever be charged what the dashboard says the plan costs.
+  const remotePlan = await fetchPlan(planCode)
+  if (!remotePlan.ok) return { error: remotePlan.error }
+
+  const checkout = await initializeTransaction({
+    email: ctx.user.email,
+    amount: remotePlan.data.amount,
+    currency: remotePlan.data.currency,
+    planCode,
+    callbackUrl: `${appBaseUrl()}/dashboard/billing?checkout=complete`,
+    // Echoed back on the webhook so the payment can be tied to a workspace even
+    // if the customer paid with a different email than their account.
+    metadata: { ownerId: ctx.ownerId, plan },
+  })
+  if (!checkout.ok) return { error: checkout.error }
+
+  return { ok: true, url: checkout.data.authorization_url }
+}
+
+/**
+ * Stops the subscription renewing. Access is intentionally left alone here —
+ * the customer keeps what they paid for until `currentPeriodEnd`, and the
+ * billing sweep drops them to free once it passes.
+ */
+export async function cancelSubscriptionAction() {
+  const ctx = await requireWorkspace()
+  const denied = denyUnlessRole(ctx, 'owner')
+  if (denied) return { error: denied }
+
+  const owner = await prisma.user.findUnique({
+    where: { id: ctx.ownerId },
+    select: { subscriptionCode: true, subscriptionToken: true },
+  })
+  if (!owner?.subscriptionCode || !owner.subscriptionToken) {
+    return { error: 'There is no active subscription to cancel.' }
+  }
+
+  const result = await disableSubscription(owner.subscriptionCode, owner.subscriptionToken)
+  if (!result.ok) return { error: result.error }
+
   await prisma.user.update({
     where: { id: ctx.ownerId },
-    data: { plan },
+    data: { cancelAtPeriodEnd: true, subscriptionStatus: 'canceled' },
   })
+
   revalidatePath('/dashboard/billing')
+  return { ok: true }
+}
+
+/**
+ * Local-only escape hatch for exercising the plan gates without a card.
+ * NODE_ENV is "production" on every Vercel deployment including previews, so
+ * this cannot be reached on a deployed site.
+ */
+export async function setPlanForTestingAction(plan: 'free' | 'pro' | 'business') {
+  if (process.env.NODE_ENV === 'production') {
+    return { error: 'Not available.' }
+  }
+
+  const ctx = await requireWorkspace()
+  const denied = denyUnlessRole(ctx, 'owner')
+  if (denied) return { error: denied }
+
+  await applyPlanChange(ctx.ownerId, plan, { reason: 'Changed from local testing controls' })
+  revalidatePath('/dashboard/billing')
+  revalidatePath('/dashboard/team')
   return { ok: true, plan }
 }

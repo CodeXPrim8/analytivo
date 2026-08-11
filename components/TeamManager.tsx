@@ -23,7 +23,7 @@ export type Member = {
   email: string
   role: MemberRole
   avatar?: string
-  status: 'pending' | 'active'
+  status: 'pending' | 'active' | 'suspended'
   inviteUrl?: string
   invitedAt: Date
   joinedAt: Date
@@ -302,7 +302,9 @@ export function TeamManager({
                     {member.email} ·{' '}
                     {member.status === 'active'
                       ? `joined ${formatRelativeTime(new Date(member.joinedAt))}`
-                      : `invited ${formatRelativeTime(new Date(member.invitedAt))}`}
+                      : member.status === 'suspended'
+                        ? 'no seat available on this plan'
+                        : `invited ${formatRelativeTime(new Date(member.invitedAt))}`}
                   </p>
                 </div>
               </div>
@@ -312,10 +314,16 @@ export function TeamManager({
                   className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
                     member.status === 'active'
                       ? 'bg-emerald-500/15 text-emerald-400'
-                      : 'bg-amber-500/15 text-amber-400'
+                      : member.status === 'suspended'
+                        ? 'bg-red-500/15 text-red-400'
+                        : 'bg-amber-500/15 text-amber-400'
                   }`}
                 >
-                  {member.status === 'active' ? 'Active' : 'Pending'}
+                  {member.status === 'active'
+                    ? 'Active'
+                    : member.status === 'suspended'
+                      ? 'Suspended'
+                      : 'Pending'}
                 </span>
 
                 {canManage ? (
@@ -348,7 +356,7 @@ export function TeamManager({
                   <button
                     onClick={() => remove(member.id)}
                     disabled={pending}
-                    title={member.status === 'active' ? 'Remove member' : 'Cancel invite'}
+                    title={member.status === 'pending' ? 'Cancel invite' : 'Remove member'}
                     className="p-2 hover:bg-muted rounded-lg"
                   >
                     <Trash2 size={16} />
