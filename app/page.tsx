@@ -5,18 +5,15 @@ import { motion } from 'framer-motion'
 import {
   ChevronRight,
   Play,
-  ArrowRight,
-  TrendingUp,
   Zap,
   BarChart3,
   Sparkles,
   Lock,
-  Users,
-  Smartphone,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import { DashboardPreview } from '@/components/DashboardPreview'
 import { containerVariants, itemVariants, fadeInUp } from '@/lib/animations'
 
 const featureHighlights = [
@@ -129,18 +126,9 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 40, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.4, ease: 'easeOut' }}
-              className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-xl p-1 overflow-hidden"
+              className="rounded-2xl border border-border/50 bg-card/30 backdrop-blur-xl p-1 overflow-hidden shadow-[0_0_80px_-24px_rgba(124,58,237,0.55)]"
             >
-              <div className="aspect-video bg-gradient-to-b from-card via-card/50 to-background rounded-xl flex items-center justify-center relative overflow-hidden">
-                <div className="absolute inset-0 bg-grid-pattern opacity-5" />
-                <div className="flex flex-col items-center gap-4">
-                  <div className="relative">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent opacity-80 blur-xl" />
-                    <Play size={32} className="absolute inset-0 m-auto text-foreground" />
-                  </div>
-                  <p className="text-muted-foreground">Dashboard Preview</p>
-                </div>
-              </div>
+              <DashboardPreview />
             </motion.div>
           </div>
         </section>

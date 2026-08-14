@@ -88,6 +88,28 @@ async function grace() {
     entitlementFor({ subscriptionStatus: 'none', subscriptionPlan: null, currentPeriodEnd: null, now }),
     'free',
   )
+  check(
+    'opay prepaid keeps plan until period end',
+    entitlementFor({
+      subscriptionStatus: 'active',
+      subscriptionPlan: 'pro',
+      currentPeriodEnd: future,
+      cancelAtPeriodEnd: true,
+      now,
+    }),
+    'pro',
+  )
+  check(
+    'opay prepaid drops after period end',
+    entitlementFor({
+      subscriptionStatus: 'active',
+      subscriptionPlan: 'pro',
+      currentPeriodEnd: past,
+      cancelAtPeriodEnd: true,
+      now,
+    }),
+    'free',
+  )
 }
 
 async function seats() {

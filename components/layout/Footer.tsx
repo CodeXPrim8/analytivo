@@ -2,56 +2,46 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Mail, Code, Send, Heart } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Mail } from 'lucide-react'
 import { BrandLogo } from '@/components/BrandLogo'
+import { useContactModal } from '@/components/ContactModal'
 import { containerVariants, itemVariants } from '@/lib/animations'
 
 const Footer = () => {
+  const { openContact } = useContactModal()
   const columns = [
     {
       title: 'Product',
       links: [
         { label: 'Features', href: '/features' },
         { label: 'Pricing', href: '/pricing' },
-        { label: 'Security', href: '#' },
-        { label: 'Roadmap', href: '#' },
       ],
     },
     {
       title: 'Resources',
       links: [
-        { label: 'Documentation', href: '#' },
         { label: 'API Reference', href: '/developers' },
-        { label: 'Blog', href: '#' },
-        { label: 'Status', href: '#' },
+        { label: 'Blog', href: '/blog' },
       ],
     },
     {
       title: 'Company',
       links: [
-        { label: 'About', href: '#' },
+        { label: 'About', href: '/about' },
         { label: 'Contact Sales', href: '/contact-sales' },
-        { label: 'Careers', href: '#' },
-        { label: 'Partners', href: '#' },
+        { label: 'Careers', href: '/careers' },
+        { label: 'Partners', href: '/partners' },
       ],
     },
     {
       title: 'Legal',
       links: [
-        { label: 'Privacy', href: '#' },
-        { label: 'Terms', href: '#' },
-        { label: 'Cookie Policy', href: '#' },
-        { label: 'Compliance', href: '#' },
+        { label: 'Privacy', href: '/privacy' },
+        { label: 'Terms', href: '/terms' },
+        { label: 'Cookie Policy', href: '/cookies' },
+        { label: 'Compliance', href: '/compliance' },
       ],
     },
-  ]
-
-  const socials = [
-    { icon: Send, href: '#', label: 'Twitter' },
-    { icon: Heart, href: '#', label: 'LinkedIn' },
-    { icon: Code, href: '#', label: 'GitHub' },
-    { icon: Mail, href: '#', label: 'Email' },
   ]
 
   return (
@@ -113,20 +103,16 @@ const Footer = () => {
               viewport={{ once: true }}
               className="flex items-center gap-4"
             >
-              {socials.map((social, index) => {
-                const Icon = social.icon
-                return (
-                  <motion.div key={index} variants={itemVariants}>
-                    <Link
-                      href={social.href}
-                      className="w-10 h-10 rounded-lg border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted transition-all"
-                      aria-label={social.label}
-                    >
-                      <Icon size={18} />
-                    </Link>
-                  </motion.div>
-                )
-              })}
+              <motion.div variants={itemVariants}>
+                <button
+                  type="button"
+                  onClick={openContact}
+                  className="w-10 h-10 rounded-lg border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted transition-all"
+                  aria-label="Send us an email"
+                >
+                  <Mail size={18} />
+                </button>
+              </motion.div>
             </motion.div>
           </div>
         </div>

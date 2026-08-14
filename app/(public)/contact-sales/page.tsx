@@ -4,22 +4,46 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Mail, Phone, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useContactModal } from '@/components/ContactModal'
 import { fadeInUp } from '@/lib/animations'
 
 export default function ContactSalesPage() {
+  const { openContact } = useContactModal()
   const [formData, setFormData] = useState({ name: '', email: '', company: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState('')
+  const [sending, setSending] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (formData.name && formData.email && formData.message) {
+    if (!formData.name || !formData.email || !formData.message) return
+    setSending(true)
+    setError('')
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          subject: 'Sales inquiry',
+        }),
+      })
+      const data = (await res.json().catch(() => ({}))) as { error?: string }
+      if (!res.ok) {
+        setError(data.error || 'Could not send your message.')
+        return
+      }
       setSubmitted(true)
       setFormData({ name: '', email: '', company: '', message: '' })
-      setTimeout(() => setSubmitted(false), 3000)
+      setTimeout(() => setSubmitted(false), 4000)
+    } catch {
+      setError('Could not send your message. Check your connection and try again.')
+    } finally {
+      setSending(false)
     }
   }
   return (
@@ -63,6 +87,11 @@ export default function ContactSalesPage() {
               {submitted && (
                 <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm">
                   Thank you! Our sales team will be in touch soon.
+                </div>
+              )}
+              {error && (
+                <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+                  {error}
                 </div>
               )}
               <div>
@@ -116,7 +145,9 @@ export default function ContactSalesPage() {
                 />
               </div>
 
-              <Button type="submit" className="w-full font-semibold">Send Message</Button>
+              <Button type="submit" className="w-full font-semibold" disabled={sending}>
+                {sending ? 'Sending…' : 'Send Message'}
+              </Button>
             </form>
           </motion.div>
 
@@ -141,9 +172,13 @@ export default function ContactSalesPage() {
                 </div>
                 <div>
                   <p className="font-semibold">Email</p>
-                  <a href="mailto:sales@analytivo.com" className="text-muted-foreground hover:text-foreground">
-                    sales@analytivo.com
-                  </a>
+                  <button
+                    type="button"
+                    onClick={openContact}
+                    className="text-muted-foreground hover:text-foreground text-left"
+                  >
+                    brandcrea8digital@yahoo.com
+                  </button>
                 </div>
               </div>
 
@@ -153,8 +188,8 @@ export default function ContactSalesPage() {
                 </div>
                 <div>
                   <p className="font-semibold">Phone</p>
-                  <a href="tel:+1-555-123-4567" className="text-muted-foreground hover:text-foreground">
-                    +1 (555) 123-4567
+                  <a href="tel:+2349099999190" className="text-muted-foreground hover:text-foreground">
+                    +234-9099999190
                   </a>
                 </div>
               </div>
@@ -165,7 +200,7 @@ export default function ContactSalesPage() {
                 </div>
                 <div>
                   <p className="font-semibold">Address</p>
-                  <p className="text-muted-foreground">123 Tech Street, San Francisco, CA 94105</p>
+                  <p className="text-muted-foreground">Ikeja, Lagos Nigeria.</p>
                 </div>
               </div>
             </div>

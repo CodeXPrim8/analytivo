@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { ArrowRight, Users, Briefcase, Church } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -161,11 +162,11 @@ export default function SolutionsPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Button size="lg" className="font-semibold">
-              Get Started Today
+            <Button size="lg" className="font-semibold" asChild>
+              <Link href="/signup">Get Started Today</Link>
             </Button>
-            <Button size="lg" variant="outline" className="font-semibold">
-              Talk to Sales
+            <Button size="lg" variant="outline" className="font-semibold" asChild>
+              <Link href="/contact-sales">Talk to Sales</Link>
             </Button>
           </motion.div>
         </div>

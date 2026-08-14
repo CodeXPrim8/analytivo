@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { BookOpen, Download, Play, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -10,25 +11,25 @@ const resources = [
     icon: BookOpen,
     title: 'Blog',
     description: 'Latest insights on video marketing and content strategy.',
-    link: '#',
+    link: '/blog',
   },
   {
     icon: Play,
     title: 'Video Tutorials',
     description: 'Step-by-step video guides to get started quickly.',
-    link: '#',
+    link: '/resources',
   },
   {
     icon: Download,
     title: 'Whitepapers',
     description: 'In-depth reports on video marketing trends and best practices.',
-    link: '#',
+    link: '/blog',
   },
   {
     icon: HelpCircle,
     title: 'Help Center',
     description: 'Common questions and troubleshooting guides.',
-    link: '#',
+    link: '/contact-sales',
   },
 ]
 
@@ -106,8 +107,8 @@ export default function ResourcesPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Button size="lg" className="font-semibold">
-              Contact Support
+            <Button size="lg" className="font-semibold" asChild>
+              <Link href="/contact-sales">Contact Support</Link>
             </Button>
           </motion.div>
         </div>

@@ -24,8 +24,13 @@ export async function GET(request: Request) {
   const lapsed = await prisma.user.findMany({
     where: {
       plan: { not: 'free' },
-      subscriptionStatus: { in: ['past_due', 'canceled'] },
       currentPeriodEnd: { lt: now },
+      OR: [
+        { subscriptionStatus: { in: ['past_due', 'canceled'] } },
+        // OPay (and any cancel-at-period-end purchase) stays "active" until the
+        // month ends; the clock is what actually ends access.
+        { cancelAtPeriodEnd: true },
+      ],
     },
     select: {
       id: true,
@@ -33,6 +38,7 @@ export async function GET(request: Request) {
       subscriptionStatus: true,
       subscriptionPlan: true,
       currentPeriodEnd: true,
+      cancelAtPeriodEnd: true,
     },
   })
 
@@ -46,6 +52,17 @@ export async function GET(request: Request) {
       const change = await applyPlanChange(user.id, entitlement, {
         reason: 'The paid period ended without a renewal',
       })
+      if (entitlement === 'free') {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            subscriptionStatus: 'none',
+            subscriptionPlan: null,
+            cancelAtPeriodEnd: false,
+            billingProvider: null,
+          },
+        })
+      }
       results.push({
         id: user.id,
         from: normalizePlan(user.plan),

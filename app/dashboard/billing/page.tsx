@@ -4,6 +4,7 @@ import { requireWorkspace } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { PUBLIC_PLANS } from '@/lib/plans'
 import { paystackEnabled, purchasablePlans } from '@/lib/paystack'
+import { opayEnabled, opayPurchasablePlans } from '@/lib/opay'
 import { BillingPanel } from '@/components/BillingPanel'
 
 export default async function BillingPage() {
@@ -28,9 +29,15 @@ export default async function BillingPage() {
           subscriptionPlan: true,
           currentPeriodEnd: true,
           cancelAtPeriodEnd: true,
+          billingProvider: true,
         },
       }),
     ])
+
+  const providers = [
+    ...(paystackEnabled() ? (['paystack'] as const) : []),
+    ...(opayEnabled() ? (['opay'] as const) : []),
+  ]
 
   return (
     <BillingPanel
@@ -48,10 +55,14 @@ export default async function BillingPage() {
         paidPlan: owner?.subscriptionPlan || null,
         currentPeriodEnd: owner?.currentPeriodEnd || null,
         cancelAtPeriodEnd: owner?.cancelAtPeriodEnd || false,
+        provider: owner?.billingProvider || null,
       }}
       plans={PUBLIC_PLANS}
-      paymentsConfigured={paystackEnabled()}
-      purchasable={purchasablePlans()}
+      providers={[...providers]}
+      purchasableByProvider={{
+        paystack: purchasablePlans(),
+        opay: opayPurchasablePlans(),
+      }}
       showTestControls={process.env.NODE_ENV !== 'production'}
     />
   )

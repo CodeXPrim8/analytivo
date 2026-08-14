@@ -9,13 +9,16 @@ import {
   setPlanForTestingAction,
   startCheckoutAction,
 } from '@/lib/actions'
+import { formatPlanPrice } from '@/lib/plans'
 
 type PlanId = 'free' | 'pro' | 'business'
+type PaymentProvider = 'paystack' | 'opay'
 
 type Plan = {
   id: string
   name: string
   price: number
+  currency: string
   features: readonly string[]
 }
 
@@ -34,6 +37,7 @@ type Subscription = {
   paidPlan: string | null
   currentPeriodEnd: Date | string | null
   cancelAtPeriodEnd: boolean
+  provider: string | null
 }
 
 function dateLabel(value: Date | string) {
@@ -49,34 +53,37 @@ export function BillingPanel({
   usage,
   subscription,
   plans,
-  paymentsConfigured,
-  purchasable,
+  providers,
+  purchasableByProvider,
   showTestControls = false,
 }: {
   currentPlan: string
   usage: Usage
   subscription: Subscription
   plans: Plan[]
-  paymentsConfigured: boolean
-  purchasable: PlanId[]
+  providers: PaymentProvider[]
+  purchasableByProvider: Record<PaymentProvider, PlanId[]>
   showTestControls?: boolean
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
   const [busyPlan, setBusyPlan] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [provider, setProvider] = useState<PaymentProvider>(providers[0] || 'paystack')
+
+  const paymentsConfigured = providers.length > 0
+  const purchasable = purchasableByProvider[provider] || []
 
   const checkout = (plan: PlanId) => {
     setError('')
     setBusyPlan(plan)
     startTransition(async () => {
-      const result = await startCheckoutAction(plan as 'pro' | 'business')
+      const result = await startCheckoutAction(plan as 'pro' | 'business', provider)
       if (result.error || !result.url) {
         setError(result.error || 'Could not start checkout.')
         setBusyPlan(null)
         return
       }
-      // Paystack hosts the card form; we never see card details.
       window.location.assign(result.url)
     })
   }
@@ -117,40 +124,48 @@ export function BillingPanel({
     }
     if (subscription.cancelAtPeriodEnd && periodEnd) {
       return {
-        tone: 'warn' as const,
-        text: `Your subscription is cancelled and will not renew. Paid features remain until ${dateLabel(periodEnd)}.`,
+        tone: 'info' as const,
+        text: `Your plan stays active until ${dateLabel(periodEnd)}. ${
+          subscription.provider === 'opay'
+            ? 'OPay charges one month at a time — pay again before then to renew.'
+            : 'Auto-renew is off.'
+        }`,
       }
     }
-    if (subscription.status === 'active' && periodEnd) {
-      return { tone: 'ok' as const, text: `Renews on ${dateLabel(periodEnd)}.` }
+    if (subscription.status === 'active' && periodEnd && subscription.provider === 'opay') {
+      return {
+        tone: 'info' as const,
+        text: `OPay access runs until ${dateLabel(periodEnd)}. Pay again to extend another month.`,
+      }
     }
     return null
   }
+
   const note = statusNote()
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Billing</h1>
+        <h1 className="text-3xl font-bold mb-2">Billing</h1>
         <p className="text-muted-foreground">
-          Current plan:{' '}
-          <span className="capitalize text-foreground font-medium">{currentPlan}</span>
+          Manage your workspace plan. Paid features unlock only after payment is confirmed.
         </p>
       </div>
 
       {error && (
-        <div className="mb-6 p-3 rounded-lg bg-red-500/10 text-red-400 text-sm">{error}</div>
+        <div className="mb-6 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
       )}
 
       {note && (
         <div
-          className={`mb-6 p-3 rounded-lg text-sm ${
+          className={`mb-6 p-3 rounded-lg text-sm flex items-start gap-2 ${
             note.tone === 'warn'
               ? 'bg-amber-500/10 text-amber-400'
-              : 'bg-emerald-500/10 text-emerald-400'
+              : 'bg-muted/50 border border-border text-muted-foreground'
           }`}
         >
-          {note.text}
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+          <span>{note.text}</span>
         </div>
       )}
 
@@ -167,8 +182,30 @@ export function BillingPanel({
 
       {!paymentsConfigured && (
         <div className="mb-6 p-3 rounded-lg bg-muted/50 border border-border text-sm text-muted-foreground">
-          Card payments are not configured yet. Add <code className="mx-1">PAYSTACK_SECRET_KEY</code>
-          and your plan codes to enable checkout.
+          Card payments are not configured yet. Add Paystack and/or OPay keys to enable checkout.
+        </div>
+      )}
+
+      {providers.length > 1 && (
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <span className="text-sm text-muted-foreground">Pay with</span>
+          {providers.map((option) => (
+            <Button
+              key={option}
+              type="button"
+              size="sm"
+              variant={provider === option ? 'default' : 'outline'}
+              disabled={pending}
+              onClick={() => setProvider(option)}
+            >
+              {option === 'paystack' ? 'Paystack' : 'OPay'}
+            </Button>
+          ))}
+          <span className="text-xs text-muted-foreground">
+            {provider === 'paystack'
+              ? 'Recurring monthly subscription'
+              : 'One month prepaid — renew manually'}
+          </span>
         </div>
       )}
 
@@ -214,7 +251,7 @@ export function BillingPanel({
             >
               <h3 className="text-xl font-semibold mb-1">{plan.name}</h3>
               <p className="text-3xl font-bold mb-4">
-                ${plan.price}
+                {formatPlanPrice(plan.price, plan.currency)}
                 <span className="text-sm font-normal text-muted-foreground">/mo</span>
               </p>
               <ul className="text-sm space-y-2 mb-6 flex-1">
@@ -223,7 +260,25 @@ export function BillingPanel({
                 ))}
               </ul>
 
-              {isCurrent ? (
+              {isCurrent && plan.id !== 'free' && provider === 'opay' && buyable ? (
+                <Button
+                  className="gap-2"
+                  disabled={pending}
+                  onClick={() => checkout(plan.id as PlanId)}
+                >
+                  {working ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Redirecting…
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink size={16} />
+                      Renew {plan.name}
+                    </>
+                  )}
+                </Button>
+              ) : isCurrent ? (
                 <Button disabled>Current plan</Button>
               ) : plan.id === 'free' ? (
                 <Button
@@ -255,7 +310,9 @@ export function BillingPanel({
 
               {!isCurrent && plan.id !== 'free' && paymentsConfigured && !buyable && (
                 <p className="text-xs text-muted-foreground mt-2">
-                  No Paystack plan code configured for {plan.name}.
+                  {provider === 'paystack'
+                    ? `No Paystack plan code configured for ${plan.name}.`
+                    : `${plan.name} is not available via OPay yet.`}
                 </p>
               )}
             </div>
@@ -264,8 +321,9 @@ export function BillingPanel({
       </div>
 
       <p className="text-xs text-muted-foreground mt-4">
-        Payments are handled by Paystack. Your plan changes only after Paystack confirms the charge,
-        so card details never touch this app.
+        Payments are handled by {providers.map((p) => (p === 'paystack' ? 'Paystack' : 'OPay')).join(' or ') || 'your payment provider'}.
+        Your plan changes only after the provider confirms the charge, so card details never touch
+        this app.
       </p>
 
       {showTestControls && (

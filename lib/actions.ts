@@ -43,7 +43,7 @@ import {
 } from '@/lib/reports'
 import { deliverReport } from '@/lib/report-delivery'
 import { applyPlanChange } from '@/lib/billing'
-import { PLAN_NAMES } from '@/lib/plans'
+import { PLAN_NAMES, PUBLIC_PLANS } from '@/lib/plans'
 import {
   disableSubscription,
   fetchPlan,
@@ -51,6 +51,12 @@ import {
   paystackEnabled,
   planCodeFor,
 } from '@/lib/paystack'
+import {
+  amountKoboFor,
+  buildOpayReference,
+  createCashierPayment,
+  opayEnabled,
+} from '@/lib/opay'
 
 async function ready() {
   await ensureDatabase()
@@ -746,14 +752,48 @@ export async function askInsightAction(question: string) {
 /* -------------------------------------------------------------- billing */
 
 /**
- * Starts a hosted Paystack checkout and hands back the URL to send the browser
- * to. Deliberately does not touch `plan`: only the webhook may do that, since
+ * Starts hosted checkout on Paystack (recurring) or OPay (one prepaid month).
+ * Deliberately does not touch `plan`: only the webhook may do that, since
  * reaching this code proves nothing about whether a payment succeeded.
  */
-export async function startCheckoutAction(plan: 'pro' | 'business') {
+export async function startCheckoutAction(
+  plan: 'pro' | 'business',
+  provider: 'paystack' | 'opay' = 'paystack',
+) {
   const ctx = await requireWorkspace()
   const denied = denyUnlessRole(ctx, 'owner')
   if (denied) return { error: denied }
+
+  if (provider === 'opay') {
+    if (!opayEnabled()) {
+      return {
+        error:
+          'OPay is not configured yet. Add OPAY_MERCHANT_ID, OPAY_PUBLIC_KEY, and OPAY_SECRET_KEY.',
+      }
+    }
+
+    const amountKobo = amountKoboFor(plan)
+    if (!amountKobo) return { error: `No price is configured for ${PLAN_NAMES[plan]}.` }
+
+    const reference = buildOpayReference(ctx.ownerId, plan)
+    const billingUrl = `${appBaseUrl()}/dashboard/billing`
+    const callbackUrl = `${appBaseUrl()}/api/webhooks/opay`
+    const planMeta = PUBLIC_PLANS.find((row) => row.id === plan)
+
+    const checkout = await createCashierPayment({
+      reference,
+      amountKobo,
+      returnUrl: `${billingUrl}?checkout=complete`,
+      cancelUrl: `${billingUrl}?checkout=cancelled`,
+      callbackUrl,
+      productName: `Analytivo ${PLAN_NAMES[plan]}`,
+      productDescription: planMeta?.description || `${PLAN_NAMES[plan]} plan — 1 month`,
+      user: { id: ctx.user.id, email: ctx.user.email, name: ctx.user.name },
+    })
+    if (!checkout.ok) return { error: checkout.error }
+
+    return { ok: true, url: checkout.data.cashierUrl, provider: 'opay' as const }
+  }
 
   if (!paystackEnabled()) {
     return { error: 'Payments are not configured yet. Add PAYSTACK_SECRET_KEY to enable checkout.' }
@@ -781,7 +821,7 @@ export async function startCheckoutAction(plan: 'pro' | 'business') {
   })
   if (!checkout.ok) return { error: checkout.error }
 
-  return { ok: true, url: checkout.data.authorization_url }
+  return { ok: true, url: checkout.data.authorization_url, provider: 'paystack' as const }
 }
 
 /**
@@ -796,9 +836,28 @@ export async function cancelSubscriptionAction() {
 
   const owner = await prisma.user.findUnique({
     where: { id: ctx.ownerId },
-    select: { subscriptionCode: true, subscriptionToken: true },
+    select: {
+      billingProvider: true,
+      subscriptionCode: true,
+      subscriptionToken: true,
+      subscriptionPlan: true,
+    },
   })
-  if (!owner?.subscriptionCode || !owner.subscriptionToken) {
+  if (!owner?.subscriptionPlan) {
+    return { error: 'There is no active subscription to cancel.' }
+  }
+
+  // OPay is prepaid with no auto-renew — cancelling only marks the period end.
+  if (owner.billingProvider === 'opay') {
+    await prisma.user.update({
+      where: { id: ctx.ownerId },
+      data: { cancelAtPeriodEnd: true, subscriptionStatus: 'canceled' },
+    })
+    revalidatePath('/dashboard/billing')
+    return { ok: true }
+  }
+
+  if (!owner.subscriptionCode || !owner.subscriptionToken) {
     return { error: 'There is no active subscription to cancel.' }
   }
 
@@ -807,7 +866,11 @@ export async function cancelSubscriptionAction() {
 
   await prisma.user.update({
     where: { id: ctx.ownerId },
-    data: { cancelAtPeriodEnd: true, subscriptionStatus: 'canceled' },
+    data: {
+      billingProvider: 'paystack',
+      cancelAtPeriodEnd: true,
+      subscriptionStatus: 'canceled',
+    },
   })
 
   revalidatePath('/dashboard/billing')

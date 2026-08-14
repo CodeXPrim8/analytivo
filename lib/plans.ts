@@ -82,7 +82,7 @@ export const PUBLIC_PLANS = [
     name: 'Free',
     description: 'For getting started with trackable video links',
     price: 0,
-    currency: 'USD',
+    currency: 'NGN',
     billingCycle: 'monthly' as const,
     features: [
       '25 links per month',
@@ -95,8 +95,8 @@ export const PUBLIC_PLANS = [
     id: 'pro',
     name: 'Pro',
     description: 'For creators and marketers who need deeper insight',
-    price: 19,
-    currency: 'USD',
+    price: 26_000,
+    currency: 'NGN',
     billingCycle: 'monthly' as const,
     features: [
       'Unlimited links',
@@ -110,8 +110,8 @@ export const PUBLIC_PLANS = [
     id: 'business',
     name: 'Business',
     description: 'For teams and agencies managing multiple campaigns',
-    price: 49,
-    currency: 'USD',
+    price: 68_000,
+    currency: 'NGN',
     billingCycle: 'monthly' as const,
     features: [
       'Everything in Pro',
@@ -122,3 +122,12 @@ export const PUBLIC_PLANS = [
     ],
   },
 ]
+
+/** Display amount in the plan's currency (Naira with ₦ and grouping). */
+export function formatPlanPrice(price: number, currency = 'NGN') {
+  if (price === 0) return currency === 'NGN' ? '₦0' : '$0'
+  if (currency === 'NGN') {
+    return `₦${price.toLocaleString('en-NG')}`
+  }
+  return `$${price.toLocaleString('en-US')}`
+}

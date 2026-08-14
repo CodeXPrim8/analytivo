@@ -117,21 +117,30 @@ export async function applyPlanChange(
 /**
  * Access outlives a cancellation or a failed charge until the paid period ends,
  * so a card that declines on renewal day does not lock someone out mid-month.
+ *
+ * OPay (and any cancel-at-period-end period) also checks the clock while status
+ * is still "active", because those purchases do not auto-renew.
  */
 export function entitlementFor(state: {
   subscriptionStatus: string
   subscriptionPlan?: string | null
   currentPeriodEnd?: Date | null
+  cancelAtPeriodEnd?: boolean
   now?: Date
 }): PlanId {
   const now = state.now ?? new Date()
   const paidPlan = normalizePlan(state.subscriptionPlan)
   if (paidPlan === 'free') return 'free'
 
-  if (state.subscriptionStatus === 'active') return paidPlan
+  const until = state.currentPeriodEnd
+  const stillInPeriod = Boolean(until && until.getTime() > now.getTime())
+
+  if (state.subscriptionStatus === 'active') {
+    if (state.cancelAtPeriodEnd && until && !stillInPeriod) return 'free'
+    return paidPlan
+  }
   if (state.subscriptionStatus === 'past_due' || state.subscriptionStatus === 'canceled') {
-    const until = state.currentPeriodEnd
-    return until && until.getTime() > now.getTime() ? paidPlan : 'free'
+    return stillInPeriod ? paidPlan : 'free'
   }
   return 'free'
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { BarChart3, Sparkles, QrCode, Share2, Zap, Lock, Users, TrendingUp, Clock, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -175,11 +176,11 @@ export default function FeaturesPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Button size="lg" className="font-semibold">
-              Start Free Trial
+            <Button size="lg" className="font-semibold" asChild>
+              <Link href="/signup">Start Free Trial</Link>
             </Button>
-            <Button size="lg" variant="outline" className="font-semibold">
-              Schedule Demo
+            <Button size="lg" variant="outline" className="font-semibold" asChild>
+              <Link href="/contact-sales">Schedule Demo</Link>
             </Button>
           </motion.div>
         </div>

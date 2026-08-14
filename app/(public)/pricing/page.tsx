@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { PUBLIC_PLANS } from '@/lib/plans'
+import { PUBLIC_PLANS, formatPlanPrice } from '@/lib/plans'
 import { containerVariants, itemVariants, fadeInUp } from '@/lib/animations'
 
 export default function PricingPage() {
@@ -71,7 +71,9 @@ export default function PricingPage() {
                 <p className="text-muted-foreground text-sm mb-6">{plan.description}</p>
 
                 <div className="mb-6">
-                  <span className="text-4xl font-bold">${plan.price}</span>
+                  <span className="text-4xl font-bold">
+                    {formatPlanPrice(plan.price, plan.currency)}
+                  </span>
                   <span className="text-muted-foreground text-sm">/month</span>
                 </div>
 
@@ -172,11 +174,11 @@ export default function PricingPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Button size="lg" className="font-semibold">
-              Start Free Trial
+            <Button size="lg" className="font-semibold" asChild>
+              <Link href="/signup">Start Free Trial</Link>
             </Button>
-            <Button size="lg" variant="outline" className="font-semibold">
-              Book Demo
+            <Button size="lg" variant="outline" className="font-semibold" asChild>
+              <Link href="/contact-sales">Book Demo</Link>
             </Button>
           </motion.div>
         </div>

@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth-context'
+import { ContactProvider } from '@/components/ContactModal'
 
 export const metadata: Metadata = {
   title: 'Analytivo - Video Link Analytics & Marketing Intelligence',
@@ -42,8 +43,10 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="antialiased">
         <AuthProvider>
-          {children}
-          {process.env.NODE_ENV === 'production' && <Analytics />}
+          <ContactProvider>
+            {children}
+            {process.env.NODE_ENV === 'production' && <Analytics />}
+          </ContactProvider>
         </AuthProvider>
       </body>
     </html>

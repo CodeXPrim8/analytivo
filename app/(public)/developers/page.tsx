@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Code, FileJson, Zap, Book } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -61,7 +62,7 @@ export default function DevelopersPage() {
       </section>
 
       {/* Documentation */}
-      <section className="px-4 md:px-8 py-20 md:py-32">
+      <section id="docs" className="px-4 md:px-8 py-20 md:py-32">
         <div className="max-w-6xl mx-auto">
           <motion.div
             variants={containerVariants}
@@ -135,11 +136,11 @@ console.log(link.shortUrl) // analytivo.com/abc123`}</code>
             transition={{ duration: 0.6, delay: 0.1 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Button size="lg" className="font-semibold">
-              View Full Docs
+            <Button size="lg" className="font-semibold" asChild>
+              <Link href="#docs">View Full Docs</Link>
             </Button>
-            <Button size="lg" variant="outline" className="font-semibold">
-              Get API Key
+            <Button size="lg" variant="outline" className="font-semibold" asChild>
+              <Link href="/signup">Get API Key</Link>
             </Button>
           </motion.div>
         </div>

@@ -21,12 +21,18 @@ model User {
   /// raise this above "free" — never a user action.
   plan          String         @default("free")
 
+  /// Which gateway owns the current paid period: paystack | opay | null.
+  billingProvider      String?
   /// Paystack customer code, kept so repeat checkouts reuse one customer.
   paystackCustomerCode String?
   /// Paystack subscription code; null while on free.
   subscriptionCode     String? @unique
   /// Paystack email token, required alongside the code to cancel.
   subscriptionToken    String?
+  /// Last OPay merchant reference that granted (or extended) access.
+  opayReference        String? @unique
+  /// OPay order number for the latest successful cashier payment.
+  opayOrderNo          String?
   /// none | active | past_due | canceled
   subscriptionStatus   String  @default("none")
   /// Plan the subscription pays for, which can outlive a downgrade request.

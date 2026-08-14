@@ -116,6 +116,7 @@ export async function POST(request: Request) {
       await prisma.user.update({
         where: { id: owner.id },
         data: {
+          billingProvider: 'paystack',
           paystackCustomerCode: subscription.customer?.customer_code ?? owner.paystackCustomerCode,
           subscriptionCode: subscription.subscription_code,
           subscriptionToken: subscription.email_token,
