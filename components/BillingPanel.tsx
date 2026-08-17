@@ -67,21 +67,21 @@ export function BillingPanel({
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
-  const [busyPlan, setBusyPlan] = useState<string | null>(null)
+  const [busyKey, setBusyKey] = useState<string | null>(null)
   const [error, setError] = useState('')
-  const [provider, setProvider] = useState<PaymentProvider>(providers[0] || 'paystack')
 
   const paymentsConfigured = providers.length > 0
-  const purchasable = purchasableByProvider[provider] || []
+  const paystackOn = providers.includes('paystack')
+  const opayOn = providers.includes('opay')
 
-  const checkout = (plan: PlanId) => {
+  const checkout = (plan: PlanId, provider: PaymentProvider) => {
     setError('')
-    setBusyPlan(plan)
+    setBusyKey(`${provider}:${plan}`)
     startTransition(async () => {
       const result = await startCheckoutAction(plan as 'pro' | 'business', provider)
       if (result.error || !result.url) {
         setError(result.error || 'Could not start checkout.')
-        setBusyPlan(null)
+        setBusyKey(null)
         return
       }
       window.location.assign(result.url)
@@ -102,10 +102,10 @@ export function BillingPanel({
 
   const switchForTesting = (plan: PlanId) => {
     setError('')
-    setBusyPlan(plan)
+    setBusyKey(`test:${plan}`)
     startTransition(async () => {
       const result = await setPlanForTestingAction(plan)
-      setBusyPlan(null)
+      setBusyKey(null)
       if (result.error) {
         setError(result.error)
         return
@@ -186,29 +186,6 @@ export function BillingPanel({
         </div>
       )}
 
-      {providers.length > 1 && (
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <span className="text-sm text-muted-foreground">Pay with</span>
-          {providers.map((option) => (
-            <Button
-              key={option}
-              type="button"
-              size="sm"
-              variant={provider === option ? 'default' : 'outline'}
-              disabled={pending}
-              onClick={() => setProvider(option)}
-            >
-              {option === 'paystack' ? 'Paystack' : 'OPay'}
-            </Button>
-          ))}
-          <span className="text-xs text-muted-foreground">
-            {provider === 'paystack'
-              ? 'Recurring monthly subscription'
-              : 'One month prepaid — renew manually'}
-          </span>
-        </div>
-      )}
-
       <div className="mb-8 rounded-xl border border-border bg-card/50 p-6 grid sm:grid-cols-3 gap-4">
         <div>
           <p className="text-sm text-muted-foreground">Links this month</p>
@@ -241,8 +218,11 @@ export function BillingPanel({
       <div className="grid md:grid-cols-3 gap-4">
         {plans.map((plan) => {
           const isCurrent = currentPlan === plan.id
-          const buyable = purchasable.includes(plan.id as PlanId)
-          const working = pending && busyPlan === plan.id
+          const paystackBuyable = paystackOn && purchasableByProvider.paystack.includes(plan.id as PlanId)
+          const opayBuyable = opayOn && purchasableByProvider.opay.includes(plan.id as PlanId)
+          const paystackBusy = pending && busyKey === `paystack:${plan.id}`
+          const opayBusy = pending && busyKey === `opay:${plan.id}`
+          const canRenewOpay = isCurrent && plan.id !== 'free' && opayBuyable
 
           return (
             <div
@@ -260,60 +240,68 @@ export function BillingPanel({
                 ))}
               </ul>
 
-              {isCurrent && plan.id !== 'free' && provider === 'opay' && buyable ? (
-                <Button
-                  className="gap-2"
-                  disabled={pending}
-                  onClick={() => checkout(plan.id as PlanId)}
-                >
-                  {working ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      Redirecting…
-                    </>
-                  ) : (
-                    <>
-                      <ExternalLink size={16} />
-                      Renew {plan.name}
-                    </>
-                  )}
-                </Button>
-              ) : isCurrent ? (
-                <Button disabled>Current plan</Button>
-              ) : plan.id === 'free' ? (
-                <Button
-                  variant="outline"
-                  disabled={pending || !subscription.paidPlan || subscription.cancelAtPeriodEnd}
-                  onClick={cancel}
-                >
-                  {subscription.cancelAtPeriodEnd ? 'Cancellation pending' : 'Cancel subscription'}
-                </Button>
+              {plan.id === 'free' ? (
+                isCurrent ? (
+                  <Button disabled>Current plan</Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    disabled={pending || !subscription.paidPlan || subscription.cancelAtPeriodEnd}
+                    onClick={cancel}
+                  >
+                    {subscription.cancelAtPeriodEnd ? 'Cancellation pending' : 'Cancel subscription'}
+                  </Button>
+                )
               ) : (
-                <Button
-                  className="gap-2"
-                  disabled={pending || !paymentsConfigured || !buyable}
-                  onClick={() => checkout(plan.id as PlanId)}
-                >
-                  {working ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      Redirecting…
-                    </>
-                  ) : (
-                    <>
-                      <ExternalLink size={16} />
-                      {`Switch to ${plan.name}`}
-                    </>
+                <div className="space-y-2">
+                  {isCurrent && !canRenewOpay && (
+                    <Button disabled className="w-full">
+                      Current plan
+                    </Button>
                   )}
-                </Button>
-              )}
-
-              {!isCurrent && plan.id !== 'free' && paymentsConfigured && !buyable && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  {provider === 'paystack'
-                    ? `No Paystack plan code configured for ${plan.name}.`
-                    : `${plan.name} is not available via OPay yet.`}
-                </p>
+                  {paystackBuyable && !isCurrent && (
+                    <Button
+                      className="w-full gap-2"
+                      disabled={pending}
+                      onClick={() => checkout(plan.id as PlanId, 'paystack')}
+                    >
+                      {paystackBusy ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          Redirecting…
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink size={16} />
+                          Pay with Paystack
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {opayBuyable && (!isCurrent || canRenewOpay) && (
+                    <Button
+                      className="w-full gap-2"
+                      variant={paystackBuyable && !isCurrent ? 'outline' : 'default'}
+                      disabled={pending}
+                      onClick={() => checkout(plan.id as PlanId, 'opay')}
+                    >
+                      {opayBusy ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          Redirecting…
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink size={16} />
+                          {canRenewOpay ? `Renew with OPay` : 'Pay with OPay'}
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {!paymentsConfigured && (
+                    <p className="text-xs text-muted-foreground">Payments are not configured yet.</p>
+                  )}
+                </div>
               )}
             </div>
           )
@@ -321,9 +309,8 @@ export function BillingPanel({
       </div>
 
       <p className="text-xs text-muted-foreground mt-4">
-        Payments are handled by {providers.map((p) => (p === 'paystack' ? 'Paystack' : 'OPay')).join(' or ') || 'your payment provider'}.
-        Your plan changes only after the provider confirms the charge, so card details never touch
-        this app.
+        Pay with Paystack (recurring monthly) or OPay (one prepaid month). Your plan changes only
+        after the provider confirms the charge, so card details never touch this app.
       </p>
 
       {showTestControls && (
