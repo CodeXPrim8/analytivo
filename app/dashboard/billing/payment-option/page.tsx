@@ -1,8 +1,6 @@
 import { redirect } from 'next/navigation'
 import { requireWorkspace } from '@/lib/workspace'
 import { PUBLIC_PLANS } from '@/lib/plans'
-import { paystackEnabled } from '@/lib/paystack'
-import { opayEnabled } from '@/lib/opay'
 import { PaymentOptionPanel } from '@/components/PaymentOptionPanel'
 
 export const dynamic = 'force-dynamic'
@@ -27,8 +25,6 @@ export default async function PaymentOptionPage({
       planName={selected.name}
       price={selected.price}
       currency={selected.currency}
-      paystackReady={paystackEnabled()}
-      opayReady={opayEnabled()}
     />
   )
 }

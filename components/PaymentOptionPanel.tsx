@@ -14,15 +14,11 @@ export function PaymentOptionPanel({
   planName,
   price,
   currency,
-  paystackReady,
-  opayReady,
 }: {
   plan: Exclude<PlanId, 'free'>
   planName: string
   price: number
   currency: string
-  paystackReady: boolean
-  opayReady: boolean
 }) {
   const [pending, startTransition] = useTransition()
   const [busy, setBusy] = useState<PaymentProvider | null>(null)
@@ -69,11 +65,7 @@ export function PaymentOptionPanel({
           <p className="text-sm text-muted-foreground mb-6 flex-1">
             Recurring monthly subscription. Card and bank options on Paystack checkout.
           </p>
-          <Button
-            className="w-full gap-2"
-            disabled={pending || !paystackReady}
-            onClick={() => pay('paystack')}
-          >
+          <Button className="w-full gap-2" disabled={pending} onClick={() => pay('paystack')}>
             {busy === 'paystack' ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
@@ -86,9 +78,6 @@ export function PaymentOptionPanel({
               </>
             )}
           </Button>
-          {!paystackReady && (
-            <p className="text-xs text-muted-foreground mt-2">Paystack is not configured yet.</p>
-          )}
         </div>
 
         <div className="rounded-xl border border-border bg-card/50 p-6 flex flex-col">
@@ -99,7 +88,7 @@ export function PaymentOptionPanel({
           <Button
             className="w-full gap-2"
             variant="outline"
-            disabled={pending || !opayReady}
+            disabled={pending}
             onClick={() => pay('opay')}
           >
             {busy === 'opay' ? (
@@ -114,11 +103,6 @@ export function PaymentOptionPanel({
               </>
             )}
           </Button>
-          {!opayReady && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Add OPAY_MERCHANT_ID, OPAY_PUBLIC_KEY, and OPAY_SECRET_KEY in Vercel to enable OPay.
-            </p>
-          )}
         </div>
       </div>
     </div>
