@@ -5,6 +5,8 @@ import { paystackEnabled } from '@/lib/paystack'
 import { opayEnabled } from '@/lib/opay'
 import { PaymentOptionPanel } from '@/components/PaymentOptionPanel'
 
+export const dynamic = 'force-dynamic'
+
 export default async function PaymentOptionPage({
   searchParams,
 }: {

@@ -5,21 +5,25 @@ import { PUBLIC_PLANS, type PlanId } from '@/lib/plans'
 /** Live by default; set OPAY_BASE_URL to the sandbox host while testing. */
 function opayBaseUrl() {
   return (
-    process.env.OPAY_BASE_URL?.trim().replace(/\/$/, '') ||
+    env('OPAY_BASE_URL').replace(/\/$/, '') ||
     'https://liveapi.opaycheckout.com/api/v1/international'
   )
 }
 
+function env(name: string) {
+  return (process.env[name] || '').trim().replace(/^["']|["']$/g, '')
+}
+
 export function opayMerchantId() {
-  return process.env.OPAY_MERCHANT_ID?.trim() || ''
+  return env('OPAY_MERCHANT_ID')
 }
 
 export function opayPublicKey() {
-  return process.env.OPAY_PUBLIC_KEY?.trim() || ''
+  return env('OPAY_PUBLIC_KEY')
 }
 
 export function opaySecretKey() {
-  return process.env.OPAY_SECRET_KEY?.trim() || ''
+  return env('OPAY_SECRET_KEY')
 }
 
 export function opayEnabled() {
