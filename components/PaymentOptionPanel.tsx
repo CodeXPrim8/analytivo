@@ -14,11 +14,13 @@ export function PaymentOptionPanel({
   planName,
   price,
   currency,
+  localDev = false,
 }: {
   plan: Exclude<PlanId, 'free'>
   planName: string
   price: number
   currency: string
+  localDev?: boolean
 }) {
   const [pending, startTransition] = useTransition()
   const [busy, setBusy] = useState<PaymentProvider | null>(null)
@@ -83,8 +85,9 @@ export function PaymentOptionPanel({
         <div className="rounded-xl border border-border bg-card/50 p-6 flex flex-col">
           <h2 className="text-xl font-semibold mb-2">OPay</h2>
           <p className="text-sm text-muted-foreground mb-6 flex-1">
-            Prepaid access. Sandbox lasts 5 minutes so you can confirm upgrade and expiry
-            before going live.
+            {localDev
+              ? 'Prepaid access. Local sandbox lasts 5 minutes so you can confirm upgrade and expiry before going live.'
+              : 'One prepaid month. Pay again when the month ends to keep the plan.'}
           </p>
           <Button
             className="w-full gap-2"

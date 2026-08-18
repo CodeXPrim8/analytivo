@@ -24,7 +24,7 @@ export default async function PaymentOptionPage({
       plan={plan}
       planName={selected.name}
       price={selected.price}
-      currency={selected.currency}
+      localDev={process.env.NODE_ENV !== 'production'}
     />
   )
 }

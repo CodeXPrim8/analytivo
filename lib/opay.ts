@@ -237,8 +237,9 @@ export function queryPaymentStatus(reference: string) {
   )
 }
 
-/** Prepaid access length. Sandbox defaults to 5 minutes so checkout can be tested. */
+/** Prepaid access length. 5-minute windows are local-dev only. */
 export function prepaidPeriodMs() {
+  if (process.env.NODE_ENV === 'production') return null
   const minutes = Number(env('OPAY_PERIOD_MINUTES') || '0')
   if (minutes > 0) return minutes * 60 * 1000
   if (opayIsSandbox()) return 5 * 60 * 1000
