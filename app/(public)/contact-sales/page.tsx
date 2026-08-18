@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Mail, Phone, MapPin, Instagram } from 'lucide-react'
+import { Mail, Phone, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { InstagramIcon } from '@/components/InstagramIcon'
 import { useContactModal } from '@/components/ContactModal'
 import { fadeInUp } from '@/lib/animations'
 
@@ -206,7 +207,7 @@ export default function ContactSalesPage() {
 
               <div className="flex gap-4">
                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Instagram size={20} className="text-primary" />
+                  <InstagramIcon size={20} className="text-primary" />
                 </div>
                 <div>
                   <p className="font-semibold">Instagram</p>
