@@ -3,8 +3,8 @@ import { startOfMonth } from 'date-fns'
 import { requireWorkspace } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { PUBLIC_PLANS } from '@/lib/plans'
-import { paystackEnabled, purchasablePlans } from '@/lib/paystack'
-import { opayEnabled, opayPurchasablePlans } from '@/lib/opay'
+import { paystackEnabled } from '@/lib/paystack'
+import { opayEnabled } from '@/lib/opay'
 import { BillingPanel } from '@/components/BillingPanel'
 
 export default async function BillingPage() {
@@ -34,11 +34,6 @@ export default async function BillingPage() {
       }),
     ])
 
-  const providers = [
-    ...(paystackEnabled() ? (['paystack'] as const) : []),
-    ...(opayEnabled() ? (['opay'] as const) : []),
-  ]
-
   return (
     <BillingPanel
       currentPlan={ctx.plan}
@@ -58,11 +53,7 @@ export default async function BillingPage() {
         provider: owner?.billingProvider || null,
       }}
       plans={PUBLIC_PLANS}
-      providers={[...providers]}
-      purchasableByProvider={{
-        paystack: purchasablePlans(),
-        opay: opayPurchasablePlans(),
-      }}
+      paymentsConfigured={paystackEnabled() || opayEnabled()}
       showTestControls={process.env.NODE_ENV !== 'production'}
     />
   )

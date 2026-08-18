@@ -2,17 +2,13 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, ExternalLink, Loader2 } from 'lucide-react'
+import { AlertTriangle, Loader2 } from 'lucide-react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import {
-  cancelSubscriptionAction,
-  setPlanForTestingAction,
-  startCheckoutAction,
-} from '@/lib/actions'
+import { cancelSubscriptionAction, setPlanForTestingAction } from '@/lib/actions'
 import { formatPlanPrice } from '@/lib/plans'
 
 type PlanId = 'free' | 'pro' | 'business'
-type PaymentProvider = 'paystack' | 'opay'
 
 type Plan = {
   id: string
@@ -24,7 +20,6 @@ type Plan = {
 
 type Usage = {
   linksThisMonth: number
-  /** null when the plan allows unlimited links. */
   linkLimit: number | null
   campaignsCreated: number
   seatsUsed: number
@@ -53,40 +48,19 @@ export function BillingPanel({
   usage,
   subscription,
   plans,
-  providers,
-  purchasableByProvider,
+  paymentsConfigured,
   showTestControls = false,
 }: {
   currentPlan: string
   usage: Usage
   subscription: Subscription
   plans: Plan[]
-  providers: PaymentProvider[]
-  purchasableByProvider: Record<PaymentProvider, PlanId[]>
+  paymentsConfigured: boolean
   showTestControls?: boolean
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
-  const [busyKey, setBusyKey] = useState<string | null>(null)
   const [error, setError] = useState('')
-
-  const paymentsConfigured = providers.length > 0
-  const paystackOn = providers.includes('paystack')
-  const opayOn = providers.includes('opay')
-
-  const checkout = (plan: PlanId, provider: PaymentProvider) => {
-    setError('')
-    setBusyKey(`${provider}:${plan}`)
-    startTransition(async () => {
-      const result = await startCheckoutAction(plan as 'pro' | 'business', provider)
-      if (result.error || !result.url) {
-        setError(result.error || 'Could not start checkout.')
-        setBusyKey(null)
-        return
-      }
-      window.location.assign(result.url)
-    })
-  }
 
   const cancel = () => {
     setError('')
@@ -102,10 +76,8 @@ export function BillingPanel({
 
   const switchForTesting = (plan: PlanId) => {
     setError('')
-    setBusyKey(`test:${plan}`)
     startTransition(async () => {
       const result = await setPlanForTestingAction(plan)
-      setBusyKey(null)
       if (result.error) {
         setError(result.error)
         return
@@ -218,11 +190,6 @@ export function BillingPanel({
       <div className="grid md:grid-cols-3 gap-4">
         {plans.map((plan) => {
           const isCurrent = currentPlan === plan.id
-          const paystackBuyable = paystackOn && purchasableByProvider.paystack.includes(plan.id as PlanId)
-          const opayBuyable = opayOn && purchasableByProvider.opay.includes(plan.id as PlanId)
-          const paystackBusy = pending && busyKey === `paystack:${plan.id}`
-          const opayBusy = pending && busyKey === `opay:${plan.id}`
-          const canRenewOpay = isCurrent && plan.id !== 'free' && opayBuyable
 
           return (
             <div
@@ -249,59 +216,28 @@ export function BillingPanel({
                     disabled={pending || !subscription.paidPlan || subscription.cancelAtPeriodEnd}
                     onClick={cancel}
                   >
-                    {subscription.cancelAtPeriodEnd ? 'Cancellation pending' : 'Cancel subscription'}
+                    {pending ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Saving…
+                      </>
+                    ) : subscription.cancelAtPeriodEnd ? (
+                      'Cancellation pending'
+                    ) : (
+                      'Cancel subscription'
+                    )}
                   </Button>
                 )
+              ) : isCurrent ? (
+                <Button asChild className="w-full">
+                  <Link href={`/dashboard/billing/payment-option?plan=${plan.id}`}>Renew plan</Link>
+                </Button>
               ) : (
-                <div className="space-y-2">
-                  {isCurrent && !canRenewOpay && (
-                    <Button disabled className="w-full">
-                      Current plan
-                    </Button>
-                  )}
-                  {paystackBuyable && !isCurrent && (
-                    <Button
-                      className="w-full gap-2"
-                      disabled={pending}
-                      onClick={() => checkout(plan.id as PlanId, 'paystack')}
-                    >
-                      {paystackBusy ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          Redirecting…
-                        </>
-                      ) : (
-                        <>
-                          <ExternalLink size={16} />
-                          Pay with Paystack
-                        </>
-                      )}
-                    </Button>
-                  )}
-                  {opayBuyable && (!isCurrent || canRenewOpay) && (
-                    <Button
-                      className="w-full gap-2"
-                      variant={paystackBuyable && !isCurrent ? 'outline' : 'default'}
-                      disabled={pending}
-                      onClick={() => checkout(plan.id as PlanId, 'opay')}
-                    >
-                      {opayBusy ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          Redirecting…
-                        </>
-                      ) : (
-                        <>
-                          <ExternalLink size={16} />
-                          {canRenewOpay ? `Renew with OPay` : 'Pay with OPay'}
-                        </>
-                      )}
-                    </Button>
-                  )}
-                  {!paymentsConfigured && (
-                    <p className="text-xs text-muted-foreground">Payments are not configured yet.</p>
-                  )}
-                </div>
+                <Button asChild className="w-full">
+                  <Link href={`/dashboard/billing/payment-option?plan=${plan.id}`}>
+                    Switch to {plan.name}
+                  </Link>
+                </Button>
               )}
             </div>
           )
@@ -309,8 +245,8 @@ export function BillingPanel({
       </div>
 
       <p className="text-xs text-muted-foreground mt-4">
-        Pay with Paystack (recurring monthly) or OPay (one prepaid month). Your plan changes only
-        after the provider confirms the charge, so card details never touch this app.
+        After you choose a plan you will pick Paystack or OPay on the next page. Your plan changes
+        only after the provider confirms the charge.
       </p>
 
       {showTestControls && (

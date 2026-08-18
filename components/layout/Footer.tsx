@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Mail } from 'lucide-react'
+import { Mail, Instagram } from 'lucide-react'
 import { BrandLogo } from '@/components/BrandLogo'
 import { useContactModal } from '@/components/ContactModal'
 import { containerVariants, itemVariants } from '@/lib/animations'
@@ -112,6 +112,17 @@ const Footer = () => {
                 >
                   <Mail size={18} />
                 </button>
+              </motion.div>
+              <motion.div variants={itemVariants}>
+                <a
+                  href="https://www.instagram.com/analytivo"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 rounded-lg border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-border hover:bg-muted transition-all"
+                  aria-label="Analytivo on Instagram"
+                >
+                  <Instagram size={18} />
+                </a>
               </motion.div>
             </motion.div>
           </div>

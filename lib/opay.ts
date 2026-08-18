@@ -28,7 +28,6 @@ export function opayEnabled() {
 
 /** Paid tiers that OPay can collect for (prices come from PUBLIC_PLANS). */
 export function opayPurchasablePlans(): PlanId[] {
-  if (!opayEnabled()) return []
   return ['pro', 'business']
 }
 
