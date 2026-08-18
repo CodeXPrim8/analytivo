@@ -27,10 +27,12 @@ function opayBaseCandidates() {
     ? [
         'https://testapi.opaycheckout.com/api/v1/international',
         'https://sandboxapi.opaycheckout.com/api/v1/international',
+        'https://sandbox-cashierapi.opayweb.com/api/v1/international',
       ]
     : [
         'https://liveapi.opaycheckout.com/api/v1/international',
         'https://api.opaycheckout.com/api/v1/international',
+        'https://cashierapi.opayweb.com/api/v1/international',
       ]
   return [preferred, ...rest.filter((url) => url !== preferred)]
 }
@@ -121,34 +123,39 @@ async function opayFetch<T>(
   if (!merchantId) return { ok: false, error: 'OPay is not configured.' }
 
   const raw = JSON.stringify(body)
-  const bearer = auth === 'public' ? opayPublicKey() : signPayload(raw)
-  if (!bearer) return { ok: false, error: 'OPay is not configured.' }
+  const modes: Array<'public' | 'signature'> =
+    auth === 'public' ? ['public', 'signature'] : ['signature']
 
   let lastError = 'Could not reach OPay. Try again in a moment.'
 
-  for (const base of opayBaseCandidates()) {
-    try {
-      const res = await fetch(`${base}${path}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${bearer}`,
-          MerchantId: merchantId,
-        },
-        body: raw,
-        cache: 'no-store',
-      })
+  hostLoop: for (const base of opayBaseCandidates()) {
+    for (const mode of modes) {
+      const token = mode === 'public' ? opayPublicKey() : signPayload(raw)
+      if (!token) continue
+      try {
+        const res = await fetch(`${base}${path}`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+            MerchantId: merchantId,
+          },
+          body: raw,
+          cache: 'no-store',
+        })
 
-      const payload = (await res.json()) as OpayEnvelope<T>
-      if (res.ok && payload.code === '00000' && payload.data) {
-        return { ok: true, data: payload.data }
+        const payload = (await res.json()) as OpayEnvelope<T>
+        if (res.ok && payload.code === '00000' && payload.data) {
+          return { ok: true, data: payload.data }
+        }
+
+        lastError = payload?.message || `OPay error ${res.status}`
+        if (!isUnknownMerchant(lastError)) break hostLoop
+      } catch (error) {
+        console.error('[opay] request failed:', base, path, error)
+        lastError = 'Could not reach OPay. Try again in a moment.'
       }
-
-      lastError = payload?.message || `OPay error ${res.status}`
-      if (!isUnknownMerchant(lastError)) break
-    } catch (error) {
-      console.error('[opay] request failed:', base, path, error)
-      lastError = 'Could not reach OPay. Try again in a moment.'
     }
   }
 
@@ -156,7 +163,7 @@ async function opayFetch<T>(
     return {
       ok: false,
       error:
-        'OPay does not recognize this merchant. In the OPay dashboard, copy the Live Merchant ID, Public Key, and Secret Key (or set OPAY_BASE_URL to https://testapi.opaycheckout.com/api/v1/international for sandbox keys).',
+        'OPay could not start checkout. Use the Sandbox Merchant ID with the matching Sandbox public and secret keys from the same OPay dashboard account.',
     }
   }
 
