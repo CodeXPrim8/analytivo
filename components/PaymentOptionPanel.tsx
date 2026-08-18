@@ -83,7 +83,8 @@ export function PaymentOptionPanel({
         <div className="rounded-xl border border-border bg-card/50 p-6 flex flex-col">
           <h2 className="text-xl font-semibold mb-2">OPay</h2>
           <p className="text-sm text-muted-foreground mb-6 flex-1">
-            One prepaid month. Pay again when the month ends to keep the plan.
+            Prepaid access. Sandbox lasts 5 minutes so you can confirm upgrade and expiry
+            before going live.
           </p>
           <Button
             className="w-full gap-2"

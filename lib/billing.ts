@@ -144,3 +144,41 @@ export function entitlementFor(state: {
   }
   return 'free'
 }
+
+/**
+ * Drops a workspace to free as soon as the paid window has elapsed, so a
+ * 5-minute sandbox period does not wait for the daily billing cron.
+ */
+export async function syncPaidAccess(ownerId: string) {
+  const owner = await prisma.user.findUnique({
+    where: { id: ownerId },
+    select: {
+      plan: true,
+      subscriptionStatus: true,
+      subscriptionPlan: true,
+      currentPeriodEnd: true,
+      cancelAtPeriodEnd: true,
+    },
+  })
+  if (!owner) return { plan: 'free' as PlanId, changed: false }
+
+  const entitled = entitlementFor(owner)
+  const current = normalizePlan(owner.plan)
+  if (entitled === current) return { plan: current, changed: false }
+
+  await applyPlanChange(ownerId, entitled, {
+    reason: 'The paid period ended without a renewal',
+  })
+  if (entitled === 'free') {
+    await prisma.user.update({
+      where: { id: ownerId },
+      data: {
+        subscriptionStatus: 'none',
+        subscriptionPlan: null,
+        cancelAtPeriodEnd: false,
+        billingProvider: null,
+      },
+    })
+  }
+  return { plan: entitled, changed: true }
+}

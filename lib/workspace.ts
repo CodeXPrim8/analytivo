@@ -9,6 +9,7 @@ import {
   type PlanCapabilities,
   type PlanId,
 } from '@/lib/plans'
+import { syncPaidAccess } from '@/lib/billing'
 
 /** Which workspace the signed-in user is currently viewing. */
 export const WORKSPACE_COOKIE = 'analytivo_ws'
@@ -102,17 +103,21 @@ export async function requireWorkspace(): Promise<WorkspaceContext> {
   const requested = store.get(WORKSPACE_COOKIE)?.value
   // Falling back to the first entry keeps a revoked member on their own workspace.
   const active = workspaces.find((w) => w.ownerId === requested) || workspaces[0]
-  const plan = active?.plan ?? 'free'
+  const ownerId = active?.ownerId ?? user.id
+  const synced = await syncPaidAccess(ownerId)
+  const plan = synced.plan
 
   return {
     user: { id: user.id, name: user.name, email: user.email },
-    ownerId: active?.ownerId ?? user.id,
+    ownerId,
     role: active?.role ?? 'owner',
-    isOwner: (active?.ownerId ?? user.id) === user.id,
+    isOwner: ownerId === user.id,
     workspaceName: active?.name ?? 'My Workspace',
     plan,
     capabilities: capabilitiesFor(plan),
-    workspaces,
+    workspaces: workspaces.map((workspace) =>
+      workspace.ownerId === ownerId ? { ...workspace, plan } : workspace,
+    ),
   }
 }
 

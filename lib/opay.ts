@@ -2,27 +2,36 @@ import crypto from 'node:crypto'
 import { nanoid } from 'nanoid'
 import { PUBLIC_PLANS, type PlanId } from '@/lib/plans'
 
-/** Live by default; set OPAY_BASE_URL to the sandbox host while testing. */
-function opayBaseUrl() {
-  return (
-    env('OPAY_BASE_URL').replace(/\/$/, '') ||
-    'https://liveapi.opaycheckout.com/api/v1/international'
-  )
-}
-
 function env(name: string) {
   return (process.env[name] || '').trim().replace(/^["']|["']$/g, '')
+}
+
+/** Sandbox until OPAY_LIVE=true. Test keys do not exist on the live API. */
+export function opayIsSandbox() {
+  return env('OPAY_LIVE') !== 'true'
+}
+
+/** Live by default only after OPAY_LIVE=true; otherwise the test host. */
+function opayBaseUrl() {
+  const configured = env('OPAY_BASE_URL').replace(/\/$/, '')
+  if (configured) return configured
+  return opayIsSandbox()
+    ? 'https://testapi.opaycheckout.com/api/v1/international'
+    : 'https://liveapi.opaycheckout.com/api/v1/international'
 }
 
 /** Hosts to try when the configured one does not know this merchant. */
 function opayBaseCandidates() {
   const preferred = opayBaseUrl()
-  const rest = [
-    'https://liveapi.opaycheckout.com/api/v1/international',
-    'https://api.opaycheckout.com/api/v1/international',
-    'https://testapi.opaycheckout.com/api/v1/international',
-    'https://sandboxapi.opaycheckout.com/api/v1/international',
-  ]
+  const rest = opayIsSandbox()
+    ? [
+        'https://testapi.opaycheckout.com/api/v1/international',
+        'https://sandboxapi.opaycheckout.com/api/v1/international',
+      ]
+    : [
+        'https://liveapi.opaycheckout.com/api/v1/international',
+        'https://api.opaycheckout.com/api/v1/international',
+      ]
   return [preferred, ...rest.filter((url) => url !== preferred)]
 }
 
@@ -228,9 +237,21 @@ export function queryPaymentStatus(reference: string) {
   )
 }
 
-/** One calendar month of access from a successful OPay payment. */
+/** Prepaid access length. Sandbox defaults to 5 minutes so checkout can be tested. */
+export function prepaidPeriodMs() {
+  const minutes = Number(env('OPAY_PERIOD_MINUTES') || '0')
+  if (minutes > 0) return minutes * 60 * 1000
+  if (opayIsSandbox()) return 5 * 60 * 1000
+  return null
+}
+
 export function prepaidPeriodEnd(from = new Date()) {
   const end = new Date(from)
+  const ms = prepaidPeriodMs()
+  if (ms) {
+    end.setTime(end.getTime() + ms)
+    return end
+  }
   end.setUTCMonth(end.getUTCMonth() + 1)
   return end
 }
